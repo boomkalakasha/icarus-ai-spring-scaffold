@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible defect in the generator or generated project
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, private URLs, customer data or security exploit details.
+        For a suspected vulnerability, follow SECURITY.md instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Which public release or commit shows the problem?
+      placeholder: v1.0.0 or a short commit ID
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, JDK version and Maven version
+      placeholder: Windows 11, JDK 17.0.x, Maven x.y.z
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Give the smallest safe command and inputs that reproduce the issue.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Observed behavior
+      description: Include a redacted error or ZIP listing when useful.
+    validations:
+      required: true

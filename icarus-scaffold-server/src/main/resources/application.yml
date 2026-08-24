@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: icarus-scaffold-server
+  mvc:
+    problemdetails:
+      enabled: false
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  max-http-request-header-size: 8KB

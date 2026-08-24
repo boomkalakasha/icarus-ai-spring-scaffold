@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build release assets
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact tag
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Confirm SemVer tag and main ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release tags must use stable SemVer vMAJOR.MINOR.PATCH: $tag" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main
+          version="${tag#v}"
+          project_version="$(mvn -q -Dstyle.color=never -DforceStdout help:evaluate -Dexpression=project.version -DskipTests)"
+          if [[ "$project_version" != "$version" ]]; then
+            echo "Tag $tag does not match Maven project version $project_version" >&2
+            exit 1
+          fi
+
+      - name: Build the reactor and run tests
+        run: mvn -B -ntp -Dstyle.color=never clean verify
+
+      - name: Test verification-script safety guards
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+
+      - name: Generate and build a release sample
+        run: python scripts/generate-sample.py --root . --output-dir .ci/generated-sample
+
+      - name: Scan source, history and generated material
+        run: python scripts/verify-public-content.py --root . --include-generated --history
+
+      - name: Generate CycloneDX SBOM
+        run: >-
+          mvn -B -ntp
+          org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+          -DoutputFormat=json -DoutputName=bom
+
+      - name: Assemble release assets and SHA-256 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          git archive --format=tar.gz \
+            --prefix="icarus-ai-spring-scaffold-${version}/" \
+            --output="dist/icarus-ai-spring-scaffold-${version}-source.tar.gz" \
+            "$GITHUB_REF_NAME"
+          cp "icarus-scaffold-core/target/icarus-scaffold-core-${version}.jar" dist/
+          cp "icarus-scaffold-cli/target/icarus-scaffold-cli-${version}-all.jar" dist/
+          cp "icarus-scaffold-server/target/icarus-scaffold-server-${version}.jar" dist/
+          test -s target/bom.json
+          cp target/bom.json "dist/icarus-ai-spring-scaffold-${version}-bom.json"
+          (cd dist && sha256sum -- * > SHA256SUMS)
+
+      - name: Upload reviewed release assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-assets
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-draft:
+    name: Attest and create draft release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - name: Download reviewed release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-assets
+          path: dist
+
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@bd77c077858b8d561b7a36cbe48ef4cc642ca39d # v2.2.2
+        with:
+          subject-path: 'dist/*'
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "Icarus AI Spring Scaffold $GITHUB_REF_NAME" --generate-notes --draft
