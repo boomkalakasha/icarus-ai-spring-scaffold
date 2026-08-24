@@ -1,0 +1,43 @@
+# Maven
+target/
+.mvn/timing.properties
+*.lastUpdated
+
+# Generated verification material
+.ci/generated-sample/
+sample-output/
+*.zip
+.sample-classpath.txt
+
+# Java and build tools
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+*.secrets
+
+# Python tooling used by repository scripts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
