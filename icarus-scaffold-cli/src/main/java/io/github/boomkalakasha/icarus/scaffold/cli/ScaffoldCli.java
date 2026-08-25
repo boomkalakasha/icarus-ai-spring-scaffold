@@ -9,6 +9,8 @@ import picocli.CommandLine.Option;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Path;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 /**
@@ -17,7 +19,7 @@ import java.util.concurrent.Callable;
  */
 @Command(name = "icarus-scaffold",
         mixinStandardHelpOptions = true,
-        description = "Generate a Spring Boot project ZIP on stdout.")
+        description = "Generate a Spring Boot project ZIP on stdout or one new cwd ZIP file.")
 public final class ScaffoldCli implements Callable<Integer> {
 
     @Option(names = "--artifact", defaultValue = "generated-service", description = "Maven artifact name")
@@ -35,33 +37,63 @@ public final class ScaffoldCli implements Callable<Integer> {
     @Option(names = "--description", defaultValue = "A generated Spring service", description = "Short project description")
     private String description;
 
+    @Option(names = "--output", paramLabel = "<filename.zip>",
+            description = "Write to one new .zip filename directly under the current working directory")
+    private String outputFileName;
+
     private final ScaffoldGenerator generator;
     private final OutputStream output;
     private final PrintWriter errors;
+    private final Path workingDirectory;
 
     public ScaffoldCli() {
-        this(new ScaffoldGenerator(), System.out, new PrintWriter(System.err, true));
+        this(new ScaffoldGenerator(), System.out, new PrintWriter(System.err, true),
+                Path.of("").toAbsolutePath().normalize());
     }
 
     public ScaffoldCli(ScaffoldGenerator generator, OutputStream output, PrintWriter errors) {
+        this(generator, output, errors, Path.of("").toAbsolutePath().normalize());
+    }
+
+    ScaffoldCli(ScaffoldGenerator generator, OutputStream output, PrintWriter errors,
+                Path workingDirectory) {
         this.generator = generator;
         this.output = output;
         this.errors = errors;
+        this.workingDirectory = Objects.requireNonNull(workingDirectory, "workingDirectory")
+                .toAbsolutePath().normalize();
     }
 
     @Override
     public Integer call() {
+        final Path requestedOutput;
+        if (outputFileName == null) {
+            requestedOutput = null;
+        } else {
+            try {
+                requestedOutput = SafeOutputFile.resolve(workingDirectory, outputFileName);
+            } catch (IllegalArgumentException exception) {
+                errors.println("Invalid output filename: " + exception.getMessage());
+                errors.flush();
+                return 2;
+            }
+        }
+
         try {
             byte[] zip = generator.generate(new ScaffoldRequest(artifact, group, packageName, port, description));
-            output.write(zip);
-            output.flush();
+            if (requestedOutput == null) {
+                output.write(zip);
+                output.flush();
+            } else {
+                SafeOutputFile.writeNew(requestedOutput, zip);
+            }
             return 0;
         } catch (IllegalArgumentException exception) {
             errors.println("Invalid scaffold request: " + exception.getMessage());
             errors.flush();
             return 2;
         } catch (IOException exception) {
-            errors.println("Could not write generated ZIP.");
+            errors.println("Could not write generated ZIP: " + exception.getMessage());
             errors.flush();
             return 1;
         }

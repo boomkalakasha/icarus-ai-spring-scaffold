@@ -6,7 +6,7 @@ services:
     environment:
       SERVER_PORT: "${port}"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:${port}/actuator/health"]
+      test: ["CMD", "java", "-cp", "/app/healthcheck", "HealthCheck", "http://localhost:${port}/actuator/health"]
       interval: 30s
       timeout: 5s
       retries: 3

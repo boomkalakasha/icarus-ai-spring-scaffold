@@ -8,6 +8,21 @@ follow [Semantic Versioning](https://semver.org/).
 
 No unreleased changes are recorded yet.
 
+## [Unreleased]
+
+### Planned for 1.1.0
+
+The productization release adds:
+
+- a cwd-confined `--output <filename.zip>` CLI option with no-overwrite,
+  race-safe `CREATE_NEW` semantics while preserving stdout as the default;
+- generated-sample package, bounded health/greeting runtime checks and optional
+  Docker Compose capability checks with explicit `NOT_RUN` when Docker is not
+  available;
+- a JRE-only generated container health probe, public LICENSE/SUPPORT files,
+  and bilingual quick-start and troubleshooting documentation;
+- local public brand asset copies and version-aligned release documentation.
+
 ## [1.0.0] - 2026-08-25
 
 Initial public release line:

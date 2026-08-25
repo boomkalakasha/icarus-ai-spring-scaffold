@@ -12,9 +12,13 @@ COPY infrastructure/src infrastructure/src
 COPY api/src api/src
 COPY boot/src boot/src
 RUN mvn -B -ntp package -DskipTests
+COPY docker/HealthCheck.java docker/HealthCheck.java
+RUN javac -d /workspace/healthcheck docker/HealthCheck.java
 
 FROM eclipse-temurin:17-jre@sha256:13cc28a6cc72a38ce1f00c906be3580c1a3e604b8984d694f369a96742abc93b
 WORKDIR /app
 COPY --from=build /workspace/boot/target/boot-0.1.0-SNAPSHOT.jar app.jar
+COPY --from=build /workspace/healthcheck /app/healthcheck
 EXPOSE ${port}
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=6 CMD ["java", "-cp", "/app/healthcheck", "HealthCheck", "http://localhost:${port}/actuator/health"]
 ENTRYPOINT ["java", "-jar", "app.jar"]

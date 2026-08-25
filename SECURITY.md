@@ -7,7 +7,8 @@ stable major/minor line. The initial supported line is:
 
 | Version | Supported |
 | --- | --- |
-| 1.0.x | Yes |
+| 1.1.x | Yes |
+| 1.0.x | Security fixes only when practical |
 | Older or unreleased snapshots | No guarantee |
 
 Support status is about the public source release. It does not certify a

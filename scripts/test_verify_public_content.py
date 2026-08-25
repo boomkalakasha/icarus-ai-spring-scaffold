@@ -41,6 +41,27 @@ class HistoryScannerTest(unittest.TestCase):
         self.assertEqual(1, len(findings))
         self.assertEqual("private-dependency-marker", findings[0].rule)
 
+    def test_private_ipv4_rule_does_not_mistake_a_tomcat_version_for_an_address(self) -> None:
+        findings = SCANNER.scan_text(
+            "Apache Tomcat/10.1.44",
+            "tree",
+            "runtime.log",
+            SCANNER.PRIVACY_PATTERNS,
+        )
+
+        self.assertEqual([], findings)
+
+    def test_private_ipv4_rule_reports_a_complete_rfc1918_address(self) -> None:
+        findings = SCANNER.scan_text(
+            "endpoint 10." + "42.0.5",
+            "tree",
+            "settings.txt",
+            SCANNER.PRIVACY_PATTERNS,
+        )
+
+        self.assertEqual(1, len(findings))
+        self.assertEqual("private-ipv4", findings[0].rule)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,12 +1,43 @@
 # Icarus AI Spring Scaffold
 
+[English](README.md) · [架构](docs/architecture.md) · [支持](SUPPORT.md)
+
 `icarus-ai-spring-scaffold` 是一个安全优先、面向 AI 友好研发流程的
 Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 后返回。生成的
 项目是 Java 17 / Spring Boot 3 应用的可审查起点，不是托管服务，也不承诺任何
 部署环境的可用性。
 
-本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；首个稳定版本线为
-`v1.0.0`。
+本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；已公开的首个稳定版本为
+`v1.0.0`，这个 `v1.1.0` 功能分支是本地候选，只有在 PR、CI、不可变标签和 GitHub
+Release 门禁被实际观察后才可称为公开发布。
+
+## 60 秒快速开始
+
+先构建完整 reactor，再生成一个 ZIP。CLI 默认仍将字节兼容的 ZIP 写到标准输出。
+
+POSIX shell：
+
+```bash
+./mvnw -B -ntp clean verify
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
+  --artifact demo-service --group com.example.demo \
+  --package com.example.demo --port 18080 \
+  --description "Generated sample" --output demo-service.zip
+```
+
+PowerShell：
+
+```powershell
+.\mvnw.cmd -B -ntp clean verify
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.0-all.jar `
+  --artifact demo-service --group com.example.demo `
+  --package com.example.demo --port 18080 `
+  --description "Generated sample" --output demo-service.zip
+```
+
+`--output` 只接受当前工作目录下的一个新 `*.zip` 文件名。绝对路径、嵌套路径、
+`..`、非 ZIP 后缀和已存在目标都会被拒绝，并用 `CREATE_NEW` 防止校验与写入之间
+的竞争覆盖。省略该选项即可保留标准输出契约。
 
 ## 仓库内容
 
@@ -33,7 +64,14 @@ Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 
 ## 构建与测试
 
 ```bash
-mvn -B -ntp clean verify
+./mvnw -B -ntp clean verify
+python -m unittest discover -s scripts -p "test_*.py"
+```
+
+Windows PowerShell：
+
+```powershell
+.\mvnw.cmd -B -ntp clean verify
 python -m unittest discover -s scripts -p "test_*.py"
 ```
 
@@ -42,20 +80,20 @@ python -m unittest discover -s scripts -p "test_*.py"
 
 ## 本地生成 ZIP
 
-CLI 将 ZIP 字节写入标准输出。使用包含运行时依赖的可执行 CLI artifact 时，可将
-输出重定向为文件：
+CLI 默认将 ZIP 字节写入标准输出。需要输出到当前目录文件时，使用上面的安全
+`--output demo-service.zip`；也可以在明确的外部策略下使用标准输出重定向：
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.0.0-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
-  --port 8080 \
+  --port 18080 \
   --description "Generated sample" > demo-service.zip
 ```
 
 实际 jar 文件名包含项目版本；如果兼容版本调整了参数，请先执行 CLI 的 help
-命令。该命令只向标准输出创建一个 ZIP，不接收输出路径、模板目录或服务器文件系统
+命令。CLI 不接受任意输出目录、覆盖开关、模板目录、shell 命令或服务器文件系统
 路径。
 
 执行跨平台端到端检查：
@@ -65,15 +103,17 @@ python scripts/generate-sample.py --root .
 ```
 
 脚本会定位 CLI jar、校验 ZIP entry 路径、将样例解压到临时/验证目录，并在生成项目
-中运行 Maven 测试。如需适配兼容下游 CLI 参数，可设置 JSON 数组环境变量
-`ICARUS_CLI_ARGS_JSON`；ZIP 仍必须写入标准输出。
+中运行 Maven `package`，随后在有界时间内检查健康和 greeting 接口。只有 Docker 和
+Compose 可用时才执行 Compose 解析、镜像构建和容器健康检查；否则报告明确记录
+`NOT_RUN`。临时进程、容器和验证目录都会清理。如需适配兼容下游 CLI 参数，可设置
+JSON 数组环境变量 `ICARUS_CLI_ARGS_JSON`；ZIP 仍必须写入标准输出。
 
 ## 运行可选 REST 适配器
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.0.0.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.0.jar
 curl --fail-with-body -H "Content-Type: application/json" \
-  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":8080,"description":"Demo service"}' \
+  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip
 ```
 
@@ -104,3 +144,7 @@ artifact、group、package、port、description 等输入有长度和白名单�
 证明 tag 的构建过程，不证明生产部署、客户交付或流量切换。
 
 离线发布说明见 [CHANGELOG.md](CHANGELOG.md)。
+
+详细契约见 [CLI](docs/cli.md)、[REST API](docs/rest-api.md)、[生成项目](docs/generated-project.md)
+和 [故障排查](docs/troubleshooting.md)。稳定的本地品牌副本位于
+[docs/assets/brand](docs/assets/brand/)。
