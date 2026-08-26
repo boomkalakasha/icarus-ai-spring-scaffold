@@ -113,9 +113,13 @@ class PrepareOutputDirectoryTest(unittest.TestCase):
         class Process:
             pid = 123
             returncode = 0
+            terminated = False
 
             def poll(self):
                 return None
+
+            def terminate(self):
+                self.terminated = True
 
             def wait(self, timeout=None):
                 return 0
@@ -124,13 +128,15 @@ class PrepareOutputDirectoryTest(unittest.TestCase):
             output_dir = Path(temporary)
             jar = output_dir / "boot.jar"
             captured = []
+            process = Process()
 
             def start(command, **kwargs):
                 captured.extend(command)
-                return Process()
+                return process
 
             with (
                 mock.patch.object(GENERATE_SAMPLE, "find_boot_jar", return_value=jar),
+                mock.patch.object(GENERATE_SAMPLE.os, "name", "posix"),
                 mock.patch.object(GENERATE_SAMPLE.subprocess, "Popen", side_effect=start),
                 mock.patch.object(GENERATE_SAMPLE.subprocess, "run"),
                 mock.patch.object(
@@ -145,6 +151,7 @@ class PrepareOutputDirectoryTest(unittest.TestCase):
                 GENERATE_SAMPLE.run_runtime_smoke(output_dir, "java", 18080, output_dir)
 
         self.assertEqual(captured, ["java", "-jar", str(jar)])
+        self.assertTrue(process.terminated)
 
     def test_docker_cleanup_removes_the_compose_owned_local_image(self) -> None:
         commands = []
