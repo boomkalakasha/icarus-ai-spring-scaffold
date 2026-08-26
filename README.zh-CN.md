@@ -1,5 +1,7 @@
 # Icarus AI Spring Scaffold
 
+![BOOMKALAKASHA 水印](docs/assets/brand/watermark-auto.svg)
+
 [English](README.md) · [架构](docs/architecture.md) · [支持](SUPPORT.md)
 
 `icarus-ai-spring-scaffold` 是一个安全优先、面向 AI 友好研发流程的

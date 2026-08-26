@@ -6,6 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseDocumentationTests(unittest.TestCase):
+    def test_readmes_use_theme_compatible_watermark(self):
+        for name in ("README.md", "README.zh-CN.md"):
+            source = (ROOT / name).read_text(encoding="utf-8")
+            self.assertIn("docs/assets/brand/watermark-auto.svg", source, name)
+
+        automatic = ROOT / "docs" / "assets" / "brand" / "watermark-auto.svg"
+        explicit_light_surface = ROOT / "docs" / "assets" / "brand" / "watermark-dark.svg"
+        self.assertTrue(automatic.is_file())
+        auto_source = automatic.read_text(encoding="utf-8")
+        self.assertIn("@media (prefers-color-scheme: dark)", auto_source)
+        self.assertRegex(auto_source, r'<text[^>]*class="wordmark"[^>]*stroke-width="3"')
+        self.assertRegex(explicit_light_surface.read_text(encoding="utf-8"), r'<text[^>]*stroke="#F7F4EC"[^>]*stroke-width="3"')
+
     def test_v110_is_described_as_the_public_release_with_evidence_boundaries(self):
         english = (ROOT / "README.md").read_text(encoding="utf-8")
         chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
