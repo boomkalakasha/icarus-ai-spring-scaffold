@@ -10,7 +10,7 @@ Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 
 部署环境的可用性。
 
 本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；最新公开稳定版本为
-[`v1.1.0`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.0)，
+[`v1.1.1`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.1)，
 发布物由已审核标签构建，并附带校验和、SBOM 与构建来源证明。
 
 ## 60 秒快速开始
@@ -21,7 +21,7 @@ POSIX shell：
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -31,7 +31,7 @@ PowerShell：
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.0-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.1-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -86,7 +86,7 @@ CLI 默认将 ZIP 字节写入标准输出。需要输出到当前目录文件�
 `--output demo-service.zip`；也可以在明确的外部策略下使用标准输出重定向：
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -107,13 +107,13 @@ python scripts/generate-sample.py --root .
 脚本会定位 CLI jar、校验 ZIP entry 路径、将样例解压到临时/验证目录，并在生成项目
 中运行 Maven `package`，随后在有界时间内检查健康和 greeting 接口。只有 Docker 和
 Compose 可用时才执行 Compose 解析、镜像构建和容器健康检查；否则报告明确记录
-`NOT_RUN`。临时进程、容器和验证目录都会清理。如需适配兼容下游 CLI 参数，可设置
+`NOT_RUN`。临时进程、容器、Compose 自建本地镜像和验证目录都会清理。如需适配兼容下游 CLI 参数，可设置
 JSON 数组环境变量 `ICARUS_CLI_ARGS_JSON`；ZIP 仍必须写入标准输出。
 
 ## 运行可选 REST 适配器
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.0.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.1.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip

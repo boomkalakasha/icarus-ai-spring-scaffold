@@ -31,6 +31,7 @@ class ScaffoldGeneratorContractTest {
         assertTrue(names.contains("infrastructure/pom.xml"));
         assertTrue(names.contains("api/pom.xml"));
         assertTrue(names.contains("boot/pom.xml"));
+        assertTrue(names.contains("boot/src/main/resources/application.yml"));
         assertTrue(names.contains("AGENTS.md"));
         assertTrue(names.contains("README.md"));
         assertTrue(names.contains("README.zh-CN.md"));
@@ -43,6 +44,7 @@ class ScaffoldGeneratorContractTest {
         assertTrue(names.stream().anyMatch(name -> name.contains("com/example/order")));
         assertTrue(allText.contains("order-service"));
         assertTrue(allText.contains("8088"));
+        assertTrue(allText.contains("server:\n  port: 8088"));
         assertFalse(allText.contains("10."));
         assertFalse(allText.contains("Spire"));
         assertFalse(allText.contains("password"));

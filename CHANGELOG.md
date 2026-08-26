@@ -4,9 +4,13 @@ All notable public changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases
 follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.1] - 2026-08-26
 
-No unreleased changes are recorded yet.
+### Fixed
+
+- Generated projects now honor the requested application port during direct `java -jar` startup; the sample verifier exercises that generated default instead of overriding it on the command line.
+- Generated-sample cleanup now uses a unique Compose project name and removes only its own local images, temporary containers, networks, and verification directory.
+- Recorded the theme-compatible watermark and published-release wording changes that are present on `main` but not in the immutable `v1.1.0` tag.
 
 ## [1.1.0] - 2026-08-26
 

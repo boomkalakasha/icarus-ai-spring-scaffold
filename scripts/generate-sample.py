@@ -298,7 +298,7 @@ def run_runtime_smoke(project_root: Path, java: str, port: int, output_dir: Path
 
     jar = find_boot_jar(project_root)
     log_path = output_dir / "runtime.log"
-    command = [java, "-jar", str(jar), f"--server.port={port}"]
+    command = [java, "-jar", str(jar)]
     print(f"$ {' '.join(command)}", flush=True)
     with log_path.open("wb") as log:
         try:
@@ -382,7 +382,8 @@ def run_docker_checks(project_root: Path, root: Path) -> str:
         print(capability, flush=True)
         return capability
 
-    compose = [docker, "compose", "-f", "compose.yaml"]
+    project_name = f"icarus-scaffold-sample-{os.getpid()}"
+    compose = [docker, "compose", "--project-name", project_name, "-f", "compose.yaml"]
     image = f"icarus-scaffold-sample-verify:{os.getpid()}"
     container_id = ""
     try:
@@ -415,7 +416,7 @@ def run_docker_checks(project_root: Path, root: Path) -> str:
     finally:
         # Docker Compose down removes only this generated project's container/network/volumes.
         probe(
-            compose + ["down", "--volumes", "--remove-orphans", "--timeout", "10"],
+            compose + ["down", "--volumes", "--remove-orphans", "--rmi", "local", "--timeout", "10"],
             project_root,
             30,
         )
