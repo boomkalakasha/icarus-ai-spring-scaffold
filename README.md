@@ -1,5 +1,7 @@
 # Icarus AI Spring Scaffold
 
+![BOOMKALAKASHA watermark](docs/assets/brand/watermark-auto.svg)
+
 [中文说明](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Support](SUPPORT.md)
 
 `icarus-ai-spring-scaffold` is a security-focused, AI-friendly generator for
