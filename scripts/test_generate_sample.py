@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
@@ -20,6 +21,31 @@ SPEC.loader.exec_module(GENERATE_SAMPLE)
 
 
 class PrepareOutputDirectoryTest(unittest.TestCase):
+
+    def test_sample_verification_contract_covers_package_runtime_and_docker_states(self) -> None:
+        source = MODULE_PATH.read_text(encoding="utf-8").lower()
+        for marker in (
+            "package",
+            "actuator/health",
+            "/api/greetings",
+            "not_run",
+            "docker compose",
+            "docker build",
+            "docker compose down",
+        ):
+            self.assertIn(marker, source, marker)
+
+    def test_custom_cli_arguments_cannot_escape_stdout_capture(self) -> None:
+        original = os.environ.get("ICARUS_CLI_ARGS_JSON")
+        try:
+            os.environ["ICARUS_CLI_ARGS_JSON"] = json.dumps(["--output", "outside.zip"])
+            with self.assertRaises(GENERATE_SAMPLE.VerificationError):
+                GENERATE_SAMPLE.cli_args()
+        finally:
+            if original is None:
+                os.environ.pop("ICARUS_CLI_ARGS_JSON", None)
+            else:
+                os.environ["ICARUS_CLI_ARGS_JSON"] = original
 
     def test_default_output_uses_a_safe_temporary_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

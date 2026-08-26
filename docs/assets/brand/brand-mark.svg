@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">BOOMKALAKASHA warm pulse circuit mark</title>
+  <desc id="desc">An amber pulse nested inside cyan and coral circuit orbits, with angular paths that suggest an abstract B and K.</desc>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M57 90C78 48 138 31 181 57c39 24 50 76 24 116-28 42-86 59-128 34-37-22-49-69-31-117Z" stroke="#35D6FF" stroke-width="8"/>
+    <path d="M60 169c29 38 88 43 126 13 32-25 39-70 14-101-28-35-84-44-121-16-27 20-34 56-17 83Z" stroke="#FF6B6B" stroke-width="5" stroke-dasharray="18 11"/>
+    <path d="M78 74v38l28 16-28 16v38" stroke="#35D6FF" stroke-width="6"/>
+    <path d="M178 72l-36 43 36 69M142 115l28 33" stroke="#FF6B6B" stroke-width="5"/>
+    <path d="M105 62l6-14M151 62l-6-14M105 194l6 14M151 194l-6 14" stroke="#FFB65A" stroke-width="4"/>
+  </g>
+  <g fill="#FFB65A" stroke="#10162F" stroke-width="3">
+    <circle cx="78" cy="74" r="6"/>
+    <circle cx="78" cy="182" r="6"/>
+    <circle cx="178" cy="72" r="6"/>
+    <circle cx="178" cy="184" r="6"/>
+  </g>
+  <circle cx="128" cy="128" r="36" fill="#10162F" stroke="#F7F4EC" stroke-width="3"/>
+  <circle cx="128" cy="128" r="27" fill="#FFB65A"/>
+  <circle cx="128" cy="128" r="11" fill="#F7F4EC"/>
+  <circle cx="128" cy="128" r="5" fill="#FF6B6B"/>
+</svg>

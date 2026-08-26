@@ -1,5 +1,7 @@
 # Icarus AI Spring Scaffold
 
+[中文说明](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Support](SUPPORT.md)
+
 `icarus-ai-spring-scaffold` is a security-focused, AI-friendly generator for
 small Spring Boot projects. It validates the project coordinates and writes a
 ZIP archive in memory before returning it. The generated project is intended as
@@ -7,7 +9,39 @@ a reviewable starting point for a Java 17 / Spring Boot 3 application; it is
 not a hosted service or a deployment guarantee.
 
 The repository is released under the [Apache License 2.0](LICENSE). The
-initial stable release line is `v1.0.0` and follows SemVer.
+published initial stable release is `v1.0.0`; this `v1.1.0` feature branch is a
+local candidate until its PR, CI, immutable tag and GitHub Release gates are
+observed. Versions follow SemVer.
+
+## Quick start (60 seconds)
+
+Build the public reactor, then generate one sample ZIP. The default CLI mode
+still writes byte-compatible ZIP output to stdout.
+
+POSIX shell:
+
+```bash
+./mvnw -B -ntp clean verify
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
+  --artifact demo-service --group com.example.demo \
+  --package com.example.demo --port 18080 \
+  --description "Generated sample" --output demo-service.zip
+```
+
+PowerShell:
+
+```powershell
+.\mvnw.cmd -B -ntp clean verify
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.0-all.jar `
+  --artifact demo-service --group com.example.demo `
+  --package com.example.demo --port 18080 `
+  --description "Generated sample" --output demo-service.zip
+```
+
+`--output` accepts only one new `*.zip` filename directly below the current
+working directory. Absolute, nested, `..`, non-ZIP and existing targets are
+rejected; `CREATE_NEW` protects against a validation/write race. Omit it to
+preserve the original stdout ZIP contract.
 
 ## What is here
 
@@ -26,7 +60,7 @@ dependency, security, operational and license review before production use.
 ## Requirements
 
 - JDK 17 (a Temurin or other compatible OpenJDK distribution is suitable).
-- Maven 3.6.3 or newer, or the checked-in Maven wrapper when available.
+- Maven 3.9+ or the checked-in Maven wrapper when available.
 - Python 3.10+ for the repository verification scripts.
 - Docker and Compose are optional and are only needed when validating a
   generated project's container files.
@@ -38,14 +72,15 @@ the public build.
 ## Build and test
 
 ```bash
-mvn -B -ntp clean verify
+./mvnw -B -ntp clean verify
 python -m unittest discover -s scripts -p "test_*.py"
 ```
 
 On Windows PowerShell, the equivalent is:
 
 ```powershell
-mvn -B -ntp clean verify
+.\mvnw.cmd -B -ntp clean verify
+python -m unittest discover -s scripts -p "test_*.py"
 ```
 
 The default GitHub workflow builds the full Maven reactor and runs tests. It
@@ -54,23 +89,24 @@ public-content scanner over the source and generated material.
 
 ## Generate a ZIP locally
 
-The CLI writes ZIP bytes to standard output. When using an executable CLI
-artifact that includes its runtime dependencies, redirect that output to a
-file:
+The CLI writes ZIP bytes to standard output by default. When using an
+executable CLI artifact that includes its runtime dependencies, redirect that
+output to a file when you need a destination outside the cwd filename policy:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.0.0-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
-  --port 8080 \
+  --port 18080 \
   --description "Generated sample" > demo-service.zip
 ```
 
 The exact jar filename includes the project version. Run the CLI's help
-command if an option has changed in a later compatible release. The command
-creates one ZIP archive on stdout; it does not receive an output path, a
-template directory or a server filesystem path.
+command if an option has changed in a later compatible release. The safer
+in-process path is `--output demo-service.zip` shown above. The command does
+not accept an arbitrary output directory, overwrite switch, template
+directory, shell command or server filesystem path.
 
 For a platform-neutral end-to-end check, run:
 
@@ -79,17 +115,21 @@ python scripts/generate-sample.py --root .
 ```
 
 The script locates the CLI jar, validates ZIP entry paths, extracts the sample
-into a temporary/generated verification directory and runs Maven tests in the
-generated project. Set `ICARUS_CLI_ARGS_JSON` to a JSON array of CLI options if
-a downstream-compatible CLI needs a different argument layout; the ZIP still
+into a temporary/generated verification directory and runs Maven `package` in
+the generated project. It then starts the packaged app for bounded health and
+greeting checks. Docker Compose parsing, image build and container-health
+checks run only when Docker and Compose are available; otherwise the report
+records `NOT_RUN`. Temporary apps, containers and verification directories are
+cleaned up. Set `ICARUS_CLI_ARGS_JSON` to a JSON array of CLI options if a
+downstream-compatible CLI needs a different argument layout; the ZIP still
 must be written to stdout.
 
 ## Run the optional REST adapter
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.0.0.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.0.jar
 curl --fail-with-body -H "Content-Type: application/json" \
-  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":8080,"description":"Demo service"}' \
+  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip
 ```
 
@@ -128,3 +168,8 @@ Those assets prove how the tagged source was built; a GitHub Release does not
 prove production deployment, customer delivery or traffic cutover.
 
 See [CHANGELOG.md](CHANGELOG.md) for offline release notes.
+
+Detailed contracts are in [CLI](docs/cli.md), [REST API](docs/rest-api.md),
+[generated project](docs/generated-project.md) and
+[troubleshooting](docs/troubleshooting.md). Stable local brand copies are
+kept under [docs/assets/brand](docs/assets/brand/).

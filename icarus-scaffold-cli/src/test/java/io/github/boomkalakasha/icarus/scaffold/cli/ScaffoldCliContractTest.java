@@ -7,10 +7,13 @@ import picocli.CommandLine;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipInputStream;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,5 +54,71 @@ class ScaffoldCliContractTest {
         assertTrue(exitCode != 0);
         assertEquals(0, output.size());
         assertFalse(errors.toString().isBlank());
+    }
+
+    @Test
+    void writesTheSameBytesToOneCwdFilenameWhenOutputIsRequested() throws Exception {
+        Path outputFile = Path.of("cli-contract-output.zip").toAbsolutePath();
+        Files.deleteIfExists(outputFile);
+        try {
+            ByteArrayOutputStream defaultOutput = new ByteArrayOutputStream();
+            int defaultExitCode = new CommandLine(new ScaffoldCli(
+                    new ScaffoldGenerator(), defaultOutput, new PrintWriter(new ByteArrayOutputStream(), true)))
+                    .execute("--artifact", "cli-service", "--group", "com.example",
+                            "--package", "com.example.cli", "--port", "8090");
+
+            ByteArrayOutputStream redirectedOutput = new ByteArrayOutputStream();
+            ByteArrayOutputStream errors = new ByteArrayOutputStream();
+            int outputExitCode = new CommandLine(new ScaffoldCli(
+                    new ScaffoldGenerator(), redirectedOutput, new PrintWriter(errors, true)))
+                    .execute("--artifact", "cli-service", "--group", "com.example",
+                            "--package", "com.example.cli", "--port", "8090",
+                            "--output", outputFile.getFileName().toString());
+
+            assertEquals(0, defaultExitCode);
+            assertEquals(0, outputExitCode);
+            assertEquals(0, redirectedOutput.size());
+            assertEquals(0, errors.size());
+            assertTrue(Files.isRegularFile(outputFile));
+            assertArrayEquals(defaultOutput.toByteArray(), Files.readAllBytes(outputFile));
+        } finally {
+            Files.deleteIfExists(outputFile);
+        }
+    }
+
+    @Test
+    void rejectsUnsafeOutputNamesAndDoesNotWriteStdout() throws Exception {
+        for (String requestedName : new String[]{
+                "nested/output.zip", "../escape.zip", "/absolute.zip", "output.tar", "output"}) {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream errors = new ByteArrayOutputStream();
+            int exitCode = new CommandLine(new ScaffoldCli(
+                    new ScaffoldGenerator(), output, new PrintWriter(errors, true)))
+                    .execute("--output", requestedName);
+
+            assertTrue(exitCode != 0, requestedName);
+            assertEquals(0, output.size(), requestedName);
+            assertFalse(errors.toString().isBlank(), requestedName);
+        }
+    }
+
+    @Test
+    void refusesToOverwriteAnExistingOutputFile() throws Exception {
+        Path outputFile = Path.of("cli-contract-existing.zip").toAbsolutePath();
+        byte[] sentinel = "do not overwrite".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        Files.write(outputFile, sentinel);
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            ByteArrayOutputStream errors = new ByteArrayOutputStream();
+            int exitCode = new CommandLine(new ScaffoldCli(
+                    new ScaffoldGenerator(), output, new PrintWriter(errors, true)))
+                    .execute("--output", outputFile.getFileName().toString());
+
+            assertTrue(exitCode != 0);
+            assertEquals(0, output.size());
+            assertArrayEquals(sentinel, Files.readAllBytes(outputFile));
+        } finally {
+            Files.deleteIfExists(outputFile);
+        }
     }
 }

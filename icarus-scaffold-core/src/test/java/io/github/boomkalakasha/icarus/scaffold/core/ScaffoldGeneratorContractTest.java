@@ -34,8 +34,11 @@ class ScaffoldGeneratorContractTest {
         assertTrue(names.contains("AGENTS.md"));
         assertTrue(names.contains("README.md"));
         assertTrue(names.contains("README.zh-CN.md"));
+        assertTrue(names.contains("LICENSE"));
+        assertTrue(names.contains("SUPPORT.md"));
         assertTrue(names.contains("Dockerfile"));
         assertTrue(names.contains("compose.yaml"));
+        assertTrue(names.contains("docker/HealthCheck.java"));
         assertTrue(names.stream().anyMatch(name -> name.startsWith(".github/workflows/")));
         assertTrue(names.stream().anyMatch(name -> name.contains("com/example/order")));
         assertTrue(allText.contains("order-service"));
@@ -44,6 +47,8 @@ class ScaffoldGeneratorContractTest {
         assertFalse(allText.contains("Spire"));
         assertFalse(allText.contains("password"));
         assertFalse(allText.contains("secret"));
+        assertTrue(allText.contains("Apache License"));
+        assertTrue(allText.contains("/actuator/health"));
     }
 
     private static String readZip(byte[] zip, List<String> names) throws IOException {

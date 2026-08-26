@@ -14,20 +14,21 @@ introducing private infrastructure or undocumented behavior.
 
 ## Development environment
 
-- JDK 17 and Maven 3.6.3+.
+- JDK 17 and Maven 3.9+.
 - Python 3.10+ for repository scripts.
 - Docker is optional and only needed for generated-project container checks.
 
 Build and test the full reactor:
 
 ```bash
-mvn -B -ntp clean verify
+./mvnw -B -ntp clean verify
 python scripts/generate-sample.py --root .
 python scripts/verify-public-content.py --root . --include-generated
 git diff --check
 ```
 
-On Windows, use `mvnw.cmd` when the Maven wrapper is present. The Python
+On Windows, use `mvnw.cmd` when the Maven wrapper is present (for example,
+`mvnw.cmd -B -ntp clean verify`). The Python
 scripts are intended to work on Windows, Linux and macOS; the release shell
 commands in GitHub Actions run only on the hosted Linux runner.
 

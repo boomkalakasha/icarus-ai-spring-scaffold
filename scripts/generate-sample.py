@@ -16,9 +16,13 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.error
+import urllib.request
 import zipfile
 
 
@@ -30,23 +34,65 @@ DEFAULT_ARGS = [
     "--package",
     "com.example.demo",
     "--port",
-    "8080",
+    "18080",
     "--description",
     "Generated sample",
 ]
+
+RUNTIME_TIMEOUT_SECONDS = 45
+RUNTIME_POLL_SECONDS = 0.5
+DOCKER_CAPABILITY_TIMEOUT_SECONDS = 15
+DOCKER_CHECK_TIMEOUT_SECONDS = 180
+DOCKER_HEALTH_TIMEOUT_SECONDS = 60
 
 
 class VerificationError(RuntimeError):
     """A safe, user-actionable verification failure."""
 
 
-def run(command: list[str], cwd: Path) -> None:
+def run(
+    command: list[str],
+    cwd: Path,
+    *,
+    timeout: float | None = None,
+    capture_output: bool = False,
+) -> subprocess.CompletedProcess[str]:
     print(f"$ {' '.join(command)}", flush=True)
-    completed = subprocess.run(command, cwd=cwd, check=False)
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=cwd,
+            check=False,
+            timeout=timeout,
+            capture_output=capture_output,
+            text=capture_output,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise VerificationError(
+            f"Command timed out after {timeout:g}s: {command[0]}"
+        ) from exc
     if completed.returncode != 0:
         raise VerificationError(
             f"Command exited with status {completed.returncode}: {command[0]}"
         )
+    return completed
+
+
+def probe(command: list[str], cwd: Path, timeout: float) -> subprocess.CompletedProcess[str]:
+    """Run a capability probe without turning an unavailable optional tool into a crash."""
+
+    print(f"$ {' '.join(command)}", flush=True)
+    try:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            check=False,
+            timeout=timeout,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return subprocess.CompletedProcess(command, 1, "", str(exc))
 
 
 def executable_command(path: Path) -> list[str]:
@@ -148,9 +194,12 @@ def cli_args() -> list[str]:
             raise VerificationError("ICARUS_CLI_ARGS_JSON must contain only strings.")
         values = parsed
 
-    if any("{output}" in value for value in values):
+    if any(
+        value in {"--output", "--outputPath"} or value.startswith("--output=")
+        for value in values
+    ) or any("{output}" in value for value in values):
         raise VerificationError(
-            "ICARUS_CLI_ARGS_JSON must not pass an output path; the public CLI writes the ZIP to stdout."
+            "ICARUS_CLI_ARGS_JSON must not pass an output path; the verifier captures the CLI stdout ZIP."
         )
     return values
 
@@ -171,6 +220,206 @@ def run_cli(
         raise VerificationError(
             f"CLI exited with status {completed.returncode}; see stderr for details."
         )
+
+
+def argument_value(arguments: list[str], option: str, default: str) -> str:
+    """Read a simple option value without invoking a shell or accepting paths."""
+
+    value: str | None = None
+    for index, argument in enumerate(arguments):
+        if argument == option:
+            if index + 1 >= len(arguments):
+                raise VerificationError(f"{option} requires one value.")
+            value = arguments[index + 1]
+        elif argument.startswith(option + "="):
+            value = argument.split("=", 1)[1]
+    return default if value is None else value
+
+
+def sample_port(arguments: list[str]) -> int:
+    raw = argument_value(arguments, "--port", "18080")
+    try:
+        port = int(raw)
+    except ValueError as exc:
+        raise VerificationError("sample --port must be an integer.") from exc
+    if port < 1024 or port > 65535:
+        raise VerificationError("sample --port must be between 1024 and 65535.")
+    return port
+
+
+def available_port() -> int:
+    """Select a currently free loopback port for a short smoke run."""
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        return int(listener.getsockname()[1])
+
+
+def replace_port(arguments: list[str], port: int) -> list[str]:
+    values = arguments.copy()
+    for index, argument in enumerate(values):
+        if argument == "--port" and index + 1 < len(values):
+            values[index + 1] = str(port)
+            return values
+        if argument.startswith("--port="):
+            values[index] = f"--port={port}"
+            return values
+    values.extend(["--port", str(port)])
+    return values
+
+
+def find_boot_jar(project_root: Path) -> Path:
+    target = project_root / "boot" / "target"
+    candidates = sorted(
+        jar
+        for jar in target.glob("*.jar")
+        if not any(
+            marker in jar.name
+            for marker in ("-sources.jar", "-javadoc.jar", "-tests.jar", ".original", "-plain.jar")
+        )
+    )
+    if not candidates:
+        raise VerificationError("Generated project did not produce boot/target/*.jar.")
+    return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+
+
+def fetch_json(url: str, timeout: float) -> tuple[int, object] | None:
+    request = urllib.request.Request(url, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            body = response.read(64 * 1024)
+            return response.status, json.loads(body.decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, OSError, UnicodeError, json.JSONDecodeError):
+        return None
+
+
+def run_runtime_smoke(project_root: Path, java: str, port: int, output_dir: Path) -> None:
+    """Start the packaged app briefly and verify bounded health and greeting HTTP calls."""
+
+    jar = find_boot_jar(project_root)
+    log_path = output_dir / "runtime.log"
+    command = [java, "-jar", str(jar), f"--server.port={port}"]
+    print(f"$ {' '.join(command)}", flush=True)
+    with log_path.open("wb") as log:
+        try:
+            process = subprocess.Popen(
+                command,
+                cwd=project_root,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+        except OSError as exc:
+            raise VerificationError(f"Could not start generated runtime: {exc}") from exc
+        deadline = time.monotonic() + RUNTIME_TIMEOUT_SECONDS
+        try:
+            checks = (
+                (f"http://127.0.0.1:{port}/actuator/health", lambda data: data == {"status": "UP"}, "health"),
+                (
+                    f"http://127.0.0.1:{port}/api/greetings?subject=sample",
+                    lambda data: isinstance(data, dict)
+                    and data.get("subject") == "sample"
+                    and data.get("message") == "Hello, sample!",
+                    "greeting",
+                ),
+            )
+            for url, predicate, name in checks:
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        raise VerificationError(
+                            f"Generated runtime exited before {name} smoke check (status {process.returncode})."
+                        )
+                    response = fetch_json(url, timeout=2)
+                    if response is not None:
+                        status, data = response
+                        if status == 200 and predicate(data):
+                            break
+                    time.sleep(RUNTIME_POLL_SECONDS)
+                else:
+                    raise VerificationError(
+                        f"Generated runtime did not pass bounded {name} smoke check within "
+                        f"{RUNTIME_TIMEOUT_SECONDS}s."
+                    )
+        finally:
+            if os.name == "nt":
+                # The Windows Java launcher can leave a JVM descendant behind;
+                # taskkill is fixed, internal cleanup rather than user input.
+                subprocess.run(
+                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                    check=False,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=10,
+                )
+            elif process.poll() is None:
+                process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+
+
+def docker_command() -> tuple[str, str] | tuple[None, str]:
+    """Return Docker capability and an explicit NOT_RUN reason when unavailable."""
+
+    executable = shutil.which("docker")
+    if executable is None:
+        return None, "NOT_RUN: docker executable is not available"
+    version = probe([executable, "version"], Path.cwd(), DOCKER_CAPABILITY_TIMEOUT_SECONDS)
+    if version.returncode != 0:
+        return None, "NOT_RUN: docker daemon is unavailable"
+    compose = probe([executable, "compose", "version"], Path.cwd(), DOCKER_CAPABILITY_TIMEOUT_SECONDS)
+    if compose.returncode != 0:
+        return None, "NOT_RUN: docker compose is unavailable"
+    return executable, "Docker and Docker Compose available"
+
+
+def run_docker_checks(project_root: Path, root: Path) -> str:
+    """Run Docker Compose parse, docker build, container health, and docker compose down cleanup."""
+
+    docker, capability = docker_command()
+    if docker is None:
+        print(capability, flush=True)
+        return capability
+
+    compose = [docker, "compose", "-f", "compose.yaml"]
+    image = f"icarus-scaffold-sample-verify:{os.getpid()}"
+    container_id = ""
+    try:
+        run(compose + ["config"], project_root, timeout=DOCKER_CHECK_TIMEOUT_SECONDS)
+        run([docker, "build", "--tag", image, "."], project_root, timeout=DOCKER_CHECK_TIMEOUT_SECONDS)
+        run(compose + ["up", "-d", "--build"], project_root, timeout=DOCKER_CHECK_TIMEOUT_SECONDS)
+
+        lookup = run(compose + ["ps", "-q", "app"], project_root,
+                     timeout=DOCKER_CAPABILITY_TIMEOUT_SECONDS, capture_output=True)
+        container_id = lookup.stdout.strip()
+        if not container_id:
+            raise VerificationError("Docker Compose did not return the generated app container id.")
+        deadline = time.monotonic() + DOCKER_HEALTH_TIMEOUT_SECONDS
+        while time.monotonic() < deadline:
+            health = run(
+                [docker, "inspect", "--format", "{{.State.Health.Status}}", container_id],
+                root,
+                timeout=DOCKER_CAPABILITY_TIMEOUT_SECONDS,
+                capture_output=True,
+            ).stdout.strip()
+            if health == "healthy":
+                print("Docker Compose container health: PASS", flush=True)
+                return "PASS: compose config, image build, and healthy container"
+            if health in {"unhealthy", "exited", "dead"}:
+                raise VerificationError(f"Generated container health state is {health}.")
+            time.sleep(1)
+        raise VerificationError(
+            f"Generated container did not become healthy within {DOCKER_HEALTH_TIMEOUT_SECONDS}s."
+        )
+    finally:
+        # Docker Compose down removes only this generated project's container/network/volumes.
+        probe(
+            compose + ["down", "--volumes", "--remove-orphans", "--timeout", "10"],
+            project_root,
+            30,
+        )
+        probe([docker, "image", "rm", "--force", image], root, 30)
 
 
 def validate_zip(zip_path: Path, output_dir: Path) -> Path:
@@ -237,6 +486,21 @@ def display_path(path: Path, root: Path) -> str:
         return str(path)
 
 
+def remove_temporary_output(output_dir: Path) -> None:
+    """Remove only the script-owned temporary directory, retrying transient Windows locks."""
+
+    for attempt in range(8):
+        if not output_dir.exists():
+            return
+        try:
+            shutil.rmtree(output_dir)
+            return
+        except PermissionError:
+            if attempt == 7:
+                raise VerificationError(f"Could not clean temporary verification directory: {output_dir}")
+            time.sleep(0.5)
+
+
 def main() -> int:
     options = parse_args()
     root = options.root.resolve()
@@ -253,19 +517,28 @@ def main() -> int:
         if not java:
             raise VerificationError("Java was not found on PATH.")
 
-        run_cli(java, cli_jar, cli_args(), zip_path, root)
+        arguments = cli_args()
+        if not os.environ.get("ICARUS_CLI_ARGS_JSON"):
+            arguments = replace_port(arguments, available_port())
+        port = sample_port(arguments)
+        run_cli(java, cli_jar, arguments, zip_path, root)
         project_root = validate_zip(zip_path, output_dir)
 
         try:
             project_maven = find_maven(project_root)
         except VerificationError:
             project_maven = maven
-        run(project_maven + ["-B", "-ntp", "-Dstyle.color=never", "test"], project_root)
+        run(project_maven + ["-B", "-ntp", "-Dstyle.color=never", "package"], project_root)
+        run_runtime_smoke(project_root, java, port, output_dir)
+        docker_status = run_docker_checks(project_root, root)
         (output_dir / "sample-build.txt").write_text(
             f"CLI jar: {cli_jar.relative_to(root)}\n"
             f"Generated ZIP: {display_path(zip_path, root)}\n"
             f"Generated project: {project_root.relative_to(output_dir)}\n"
-            "Result: Maven test completed successfully\n",
+            "Package: PASS\n"
+            "Runtime health: PASS\n"
+            "Runtime greeting: PASS\n"
+            f"Docker Compose: {docker_status}\n",
             encoding="utf-8",
         )
         if remove_after_check:
@@ -274,7 +547,7 @@ def main() -> int:
             print(f"Generated and tested sample: {zip_path}")
     finally:
         if remove_after_check and output_dir.exists():
-            shutil.rmtree(output_dir)
+            remove_temporary_output(output_dir)
     return 0
 
 
