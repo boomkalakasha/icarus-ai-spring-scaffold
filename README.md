@@ -8,10 +8,9 @@ ZIP archive in memory before returning it. The generated project is intended as
 a reviewable starting point for a Java 17 / Spring Boot 3 application; it is
 not a hosted service or a deployment guarantee.
 
-The repository is released under the [Apache License 2.0](LICENSE). The
-published initial stable release is `v1.0.0`; this `v1.1.0` feature branch is a
-local candidate until its PR, CI, immutable tag and GitHub Release gates are
-observed. Versions follow SemVer.
+The repository is released under the [Apache License 2.0](LICENSE). The latest
+public stable release is [`v1.1.0`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.0),
+built from its reviewed tag with checksums, SBOM, and build provenance. Versions follow SemVer.
 
 ## Quick start (60 seconds)
 

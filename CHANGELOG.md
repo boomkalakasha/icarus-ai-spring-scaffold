@@ -8,9 +8,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 No unreleased changes are recorded yet.
 
-## [Unreleased]
-
-### Planned for 1.1.0
+## [1.1.0] - 2026-08-26
 
 The productization release adds:
 
