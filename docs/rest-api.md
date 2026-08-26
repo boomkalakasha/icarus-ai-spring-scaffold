@@ -1,10 +1,10 @@
 # REST API
 
 The optional `icarus-scaffold-server` binds to `127.0.0.1` by default. Start
-the 1.1.1 jar after building the reactor:
+the 1.1.2 jar after building the reactor:
 
 ```text
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.1.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.2.jar
 ```
 
 ## Generate a ZIP

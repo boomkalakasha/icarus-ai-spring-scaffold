@@ -1,6 +1,6 @@
 # CLI
 
-The executable artifact is `icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar`.
+The executable artifact is `icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar`.
 Run `--help` for the complete option list.
 
 ## Quick start
@@ -8,7 +8,7 @@ Run `--help` for the complete option list.
 POSIX shell:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -17,7 +17,7 @@ java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
 PowerShell:
 
 ```powershell
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.1-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.2-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
