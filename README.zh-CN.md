@@ -7,9 +7,9 @@ Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 
 项目是 Java 17 / Spring Boot 3 应用的可审查起点，不是托管服务，也不承诺任何
 部署环境的可用性。
 
-本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；已公开的首个稳定版本为
-`v1.0.0`，这个 `v1.1.0` 功能分支是本地候选，只有在 PR、CI、不可变标签和 GitHub
-Release 门禁被实际观察后才可称为公开发布。
+本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；最新公开稳定版本为
+[`v1.1.0`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.0)，
+发布物由已审核标签构建，并附带校验和、SBOM 与构建来源证明。
 
 ## 60 秒快速开始
 
