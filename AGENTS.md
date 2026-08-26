@@ -12,8 +12,8 @@ belong here.
 - `main` is the protected release branch. Changes arrive through reviewed pull
   requests and must not be pushed directly to `main`.
 - Use SemVer tags in the form `vMAJOR.MINOR.PATCH`. A tag is immutable once
-  released; `v1.0.0` is the initial stable release. Treat a future `v1.1.0`
-  line as a local candidate until the remote release gates are observed.
+  released; `v1.0.0` is the initial stable release. Treat source ahead of the
+  latest published tag as a local candidate until the remote release gates are observed.
 - Do not commit or push as part of local implementation work unless that
   operation is explicitly requested and separately authorized.
 

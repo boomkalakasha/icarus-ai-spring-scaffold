@@ -54,6 +54,7 @@ public final class TemplateRenderer {
             "api/src/main/java/__packagePath__/api/GreetingController.java.ftl",
             "boot/pom.xml.ftl",
             "boot/src/main/java/__packagePath__/boot/GeneratedApplication.java.ftl",
+            "boot/src/main/resources/application.yml.ftl",
             "boot/src/test/java/__packagePath__/boot/GeneratedApplicationTest.java.ftl");
 
     private final Configuration configuration;

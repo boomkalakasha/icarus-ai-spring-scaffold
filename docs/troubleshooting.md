@@ -19,7 +19,7 @@ traversal, non-ZIP suffix or an existing file. Use stdout redirection when a
 different destination policy is required:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar > demo-service.zip
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar > demo-service.zip
 ```
 
 ## Runtime smoke cannot connect

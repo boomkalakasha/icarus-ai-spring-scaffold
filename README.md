@@ -11,7 +11,7 @@ a reviewable starting point for a Java 17 / Spring Boot 3 application; it is
 not a hosted service or a deployment guarantee.
 
 The repository is released under the [Apache License 2.0](LICENSE). The latest
-public stable release is [`v1.1.0`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.0),
+public stable release is [`v1.1.1`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.1),
 built from its reviewed tag with checksums, SBOM, and build provenance. Versions follow SemVer.
 
 ## Quick start (60 seconds)
@@ -23,7 +23,7 @@ POSIX shell:
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -33,7 +33,7 @@ PowerShell:
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.0-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.1-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -95,7 +95,7 @@ executable CLI artifact that includes its runtime dependencies, redirect that
 output to a file when you need a destination outside the cwd filename policy:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.0-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -120,15 +120,15 @@ into a temporary/generated verification directory and runs Maven `package` in
 the generated project. It then starts the packaged app for bounded health and
 greeting checks. Docker Compose parsing, image build and container-health
 checks run only when Docker and Compose are available; otherwise the report
-records `NOT_RUN`. Temporary apps, containers and verification directories are
-cleaned up. Set `ICARUS_CLI_ARGS_JSON` to a JSON array of CLI options if a
+records `NOT_RUN`. Temporary apps, containers, Compose-owned local images, and
+verification directories are cleaned up. Set `ICARUS_CLI_ARGS_JSON` to a JSON array of CLI options if a
 downstream-compatible CLI needs a different argument layout; the ZIP still
 must be written to stdout.
 
 ## Run the optional REST adapter
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.0.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.1.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip

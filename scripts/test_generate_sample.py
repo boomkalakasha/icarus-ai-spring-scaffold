@@ -8,8 +8,10 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 
 MODULE_PATH = Path(__file__).with_name("generate-sample.py")
@@ -106,6 +108,70 @@ class PrepareOutputDirectoryTest(unittest.TestCase):
 
             with self.assertRaises(GENERATE_SAMPLE.VerificationError):
                 GENERATE_SAMPLE.prepare_output_dir(root, Path(".ci/generated-sample"))
+
+    def test_runtime_smoke_uses_the_generated_port_without_a_command_line_override(self) -> None:
+        class Process:
+            pid = 123
+            returncode = 0
+
+            def poll(self):
+                return None
+
+            def wait(self, timeout=None):
+                return 0
+
+        with tempfile.TemporaryDirectory() as temporary:
+            output_dir = Path(temporary)
+            jar = output_dir / "boot.jar"
+            captured = []
+
+            def start(command, **kwargs):
+                captured.extend(command)
+                return Process()
+
+            with (
+                mock.patch.object(GENERATE_SAMPLE, "find_boot_jar", return_value=jar),
+                mock.patch.object(GENERATE_SAMPLE.subprocess, "Popen", side_effect=start),
+                mock.patch.object(GENERATE_SAMPLE.subprocess, "run"),
+                mock.patch.object(
+                    GENERATE_SAMPLE,
+                    "fetch_json",
+                    side_effect=[
+                        (200, {"status": "UP"}),
+                        (200, {"subject": "sample", "message": "Hello, sample!"}),
+                    ],
+                ),
+            ):
+                GENERATE_SAMPLE.run_runtime_smoke(output_dir, "java", 18080, output_dir)
+
+        self.assertEqual(captured, ["java", "-jar", str(jar)])
+
+    def test_docker_cleanup_removes_the_compose_owned_local_image(self) -> None:
+        commands = []
+        cleanup = []
+
+        def fake_run(command, cwd, **kwargs):
+            commands.append(command)
+            stdout = "container-id\n" if "ps" in command else "healthy\n" if "inspect" in command else ""
+            return subprocess.CompletedProcess(command, 0, stdout, "")
+
+        def fake_probe(command, cwd, timeout):
+            cleanup.append(command)
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            with (
+                mock.patch.object(GENERATE_SAMPLE, "docker_command", return_value=("docker", "available")),
+                mock.patch.object(GENERATE_SAMPLE.os, "getpid", return_value=4242),
+                mock.patch.object(GENERATE_SAMPLE, "run", side_effect=fake_run),
+                mock.patch.object(GENERATE_SAMPLE, "probe", side_effect=fake_probe),
+            ):
+                status = GENERATE_SAMPLE.run_docker_checks(Path(temporary), Path(temporary))
+
+        self.assertIn("healthy container", status)
+        compose_prefix = ["docker", "compose", "--project-name", "icarus-scaffold-sample-4242", "-f", "compose.yaml"]
+        self.assertTrue(all(command[:6] == compose_prefix for command in commands if command[:2] == ["docker", "compose"]))
+        self.assertIn(compose_prefix + ["down", "--volumes", "--remove-orphans", "--rmi", "local", "--timeout", "10"], cleanup)
 
 
 if __name__ == "__main__":
