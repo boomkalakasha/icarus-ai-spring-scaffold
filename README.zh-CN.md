@@ -4,13 +4,19 @@
 
 [English](README.md) · [架构](docs/architecture.md) · [支持](SUPPORT.md)
 
+> **从一句需求，生成一套可审查的服务骨架。**
+>
+> **From one idea to a reviewable service skeleton.**
+
+当你要快速创建 Java 17 / Spring Boot 服务时，Icarus 可以通过 CLI 或 REST 生成可审查、可构建、可演进的多模块 ZIP，作为团队或协作 Agent 的安全起点。
+
 `icarus-ai-spring-scaffold` 是一个安全优先、面向 AI 友好研发流程的
 Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 后返回。生成的
 项目是 Java 17 / Spring Boot 3 应用的可审查起点，不是托管服务，也不承诺任何
 部署环境的可用性。
 
 本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；最新公开稳定版本为
-[`v1.1.1`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.1)，
+[`v1.1.2`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2)，
 发布物由已审核标签构建，并附带校验和、SBOM 与构建来源证明。
 
 ## 60 秒快速开始
@@ -21,7 +27,7 @@ POSIX shell：
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -31,7 +37,7 @@ PowerShell：
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.1-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.2-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -52,6 +58,11 @@ java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.1-all.jar `
 
 生成器核心与 HTTP、数据库边界分离。生成项目包含便于开始开发的应用分层和测试，
 但投入生产前仍需独立完成依赖、安全、运维和许可证审查。
+
+## 配套项目
+
+- [AI-first Vibe Coding Skill](https://github.com/boomkalakasha/ai-first-vibe-coding-skill)：把生成的服务骨架交给边界清楚的 Agent 协作实现，再由独立 Reviewer 和主 Agent 用证据验收。
+- [Icarus 开源治理](https://github.com/boomkalakasha/icarus-open-source-governance-skill)：准备公开发布时，检查来源、隐私、文档和发布证据。
 
 ## 环境要求
 
@@ -86,7 +97,7 @@ CLI 默认将 ZIP 字节写入标准输出。需要输出到当前目录文件�
 `--output demo-service.zip`；也可以在明确的外部策略下使用标准输出重定向：
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -113,7 +124,7 @@ JSON 数组环境变量 `ICARUS_CLI_ARGS_JSON`；ZIP 仍必须写入标准输出
 ## 运行可选 REST 适配器
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.1.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.2.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip

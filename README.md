@@ -4,6 +4,12 @@
 
 [中文说明](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Support](SUPPORT.md)
 
+> **从一句需求，生成一套可审查的服务骨架。**
+>
+> **From one idea to a reviewable service skeleton.**
+
+When a new Java 17 / Spring Boot service needs a clean, testable beginning, Icarus generates a multi-module ZIP through the CLI or REST adapter—ready for a team or collaborating agents to inspect, build, and evolve.
+
 `icarus-ai-spring-scaffold` is a security-focused, AI-friendly generator for
 small Spring Boot projects. It validates the project coordinates and writes a
 ZIP archive in memory before returning it. The generated project is intended as
@@ -11,7 +17,7 @@ a reviewable starting point for a Java 17 / Spring Boot 3 application; it is
 not a hosted service or a deployment guarantee.
 
 The repository is released under the [Apache License 2.0](LICENSE). The latest
-public stable release is [`v1.1.1`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.1),
+public stable release is [`v1.1.2`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2),
 built from its reviewed tag with checksums, SBOM, and build provenance. Versions follow SemVer.
 
 ## Quick start (60 seconds)
@@ -23,7 +29,7 @@ POSIX shell:
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -33,7 +39,7 @@ PowerShell:
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.1-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.2-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -57,6 +63,11 @@ The generator deliberately keeps the core independent from HTTP and database
 concerns. Generated projects contain the application layers and tests needed
 for a useful starting point, but each generated project still needs normal
 dependency, security, operational and license review before production use.
+
+## Companion projects
+
+- [AI-first Vibe Coding Skill](https://github.com/boomkalakasha/ai-first-vibe-coding-skill) — take the generated service from a clean skeleton through bounded agent implementation, independent review, and evidence-backed acceptance.
+- [Icarus Open-source Governance](https://github.com/boomkalakasha/icarus-open-source-governance-skill) — prepare the service for public release with provenance, privacy, documentation, and release-evidence checks.
 
 ## Requirements
 
@@ -95,7 +106,7 @@ executable CLI artifact that includes its runtime dependencies, redirect that
 output to a file when you need a destination outside the cwd filename policy:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.1-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -128,7 +139,7 @@ must be written to stdout.
 ## Run the optional REST adapter
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.1.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.2.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip

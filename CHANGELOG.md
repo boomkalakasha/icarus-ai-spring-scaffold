@@ -4,6 +4,13 @@ All notable public changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases
 follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 2026-08-26
+
+### Added
+
+- Added a first-glance bilingual value proposition and a concrete new-service generation scenario.
+- Added companion links to AI-first Vibe Coding Skill and Icarus Open-source Governance.
+
 ## [1.1.1] - 2026-08-26
 
 ### Fixed
