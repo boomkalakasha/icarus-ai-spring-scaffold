@@ -24,6 +24,45 @@ SPEC.loader.exec_module(GENERATE_SAMPLE)
 
 class PrepareOutputDirectoryTest(unittest.TestCase):
 
+    def test_run_timeout_terminates_the_entire_process_tree(self) -> None:
+        calls = []
+
+        class Process:
+            pid = 777
+
+            def communicate(self, timeout=None):
+                calls.append(("communicate", timeout))
+                raise subprocess.TimeoutExpired(["docker", "build"], timeout)
+
+            def poll(self):
+                return None
+
+            def wait(self, timeout=None):
+                calls.append(("wait", timeout))
+                return -9
+
+        process = Process()
+        with (
+            mock.patch.object(GENERATE_SAMPLE.os, "name", "nt"),
+            mock.patch.object(GENERATE_SAMPLE.subprocess, "Popen", return_value=process),
+            mock.patch.object(
+                GENERATE_SAMPLE.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess(["taskkill"], 0, "", ""),
+            ) as taskkill,
+        ):
+            with self.assertRaisesRegex(GENERATE_SAMPLE.VerificationError, "timed out after 1s"):
+                GENERATE_SAMPLE.run(["docker", "build"], Path("."), timeout=1)
+
+        taskkill.assert_called_once()
+        self.assertEqual(taskkill.call_args.args[0], ["taskkill", "/PID", "777", "/T", "/F"])
+        self.assertIn(("wait", 5), calls)
+
+    def test_docker_check_timeout_allows_cold_image_pulls_and_safe_override(self) -> None:
+        self.assertGreaterEqual(GENERATE_SAMPLE.DEFAULT_DOCKER_CHECK_TIMEOUT_SECONDS, 600)
+        with mock.patch.dict(GENERATE_SAMPLE.os.environ, {"ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS": "12.5"}):
+            self.assertEqual(12.5, GENERATE_SAMPLE.docker_check_timeout_seconds())
+
     def test_sample_verification_contract_covers_package_runtime_and_docker_states(self) -> None:
         source = MODULE_PATH.read_text(encoding="utf-8").lower()
         for marker in (

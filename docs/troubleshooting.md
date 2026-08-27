@@ -19,7 +19,7 @@ traversal, non-ZIP suffix or an existing file. Use stdout redirection when a
 different destination policy is required:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar > demo-service.zip
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar > demo-service.zip
 ```
 
 ## Runtime smoke cannot connect
@@ -36,7 +36,9 @@ Docker checks are optional. When the `docker` executable, daemon or Compose
 plugin is unavailable, the sample report records `NOT_RUN` and the script does
 not claim container coverage. When Docker is available, the verifier parses
 Compose, builds the image, waits for a healthy container and runs Compose
-cleanup even after a failure.
+cleanup even after a failure. A cold Docker cache gets a 600-second build
+window by default; set `ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS` to a positive
+number of seconds when a runner needs a different bound.
 
 ## REST smoke fails
 

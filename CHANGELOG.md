@@ -4,6 +4,21 @@ All notable public changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases
 follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.3] - 2026-08-26
+
+> Candidate notes for the next release; this version is not public until its
+> tag, CI, assets, and release gates are independently verified.
+
+### Fixed
+
+- Terminate timed-out Docker/Compose process trees on Windows so Buildx cannot
+  keep the generated temporary directory locked after a failed verification.
+- Allow a 600-second cold-cache Docker build window by default, with a positive
+  `ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS` override for slower or faster runners.
+- Reworked the English and Chinese READMEs around a core-feature table, common
+  use cases and a four-step first-project path so new users can reach a useful
+  generated sample without reconstructing the workflow from scattered sections.
+
 ## [1.1.2] - 2026-08-26
 
 ### Added
@@ -43,3 +58,9 @@ Initial public release line:
 - bilingual documentation and public contribution/security guidance;
 - GitHub CI, dependency automation, static security analysis, checksums, SBOM
   and build-provenance release metadata.
+
+[1.1.3]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.3
+[1.1.2]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2
+[1.1.1]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.1
+[1.1.0]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.0
+[1.0.0]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.0.0
