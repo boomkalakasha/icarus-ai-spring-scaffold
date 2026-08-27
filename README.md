@@ -18,18 +18,60 @@ not a hosted service or a deployment guarantee.
 
 The repository is released under the [Apache License 2.0](LICENSE). The latest
 public stable release is [`v1.1.2`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2),
-built from its reviewed tag with checksums, SBOM, and build provenance. Versions follow SemVer.
+built from its reviewed tag with checksums, SBOM, and build provenance. This
+source tree contains the reviewed `v1.1.3` candidate; it is not a public
+release until its tag, CI, assets, and release gates are independently verified.
+Versions follow SemVer.
+
+## At a glance
+
+| If you need to... | Icarus gives you... | A useful first result |
+| --- | --- | --- |
+| Start a new Java service | A validated, multi-module Spring Boot project ZIP | A reviewable skeleton instead of an empty repository |
+| Keep generation safe | Bounded coordinates, confined paths, ZIP traversal checks and no-overwrite output | A predictable artifact that is safer to hand to a team or Agent |
+| Choose how to integrate it | A local CLI plus an optional REST adapter | A scriptable path for developers, CI jobs or a trusted internal edge |
+| Prove the generated project is usable | Package, health, greeting and optional Docker Compose checks | Evidence about the sample, with unavailable checks reported as `NOT_RUN` |
+
+Typical uses include bootstrapping a small Spring service, creating a consistent
+starting point for several collaborating Agents, or demonstrating a service
+shape in a workshop. It is a generator and reviewable starting point—not a
+replacement for application-specific design, security review or deployment
+operations.
 
 ## Quick start (60 seconds)
 
-Build the public reactor, then generate one sample ZIP. The default CLI mode
-still writes byte-compatible ZIP output to stdout.
+No global Maven installation is required for the first run: use the checked-in
+wrapper and keep the generated ZIP in the current directory.
+
+For a first try, follow these four steps:
+
+1. Build the reactor so the CLI and its dependencies are available locally.
+2. Generate `demo-service.zip` with the CLI command below.
+3. Unpack it and read the generated `AGENTS.md`, README and module layout
+   before changing application code.
+4. Run `python scripts/generate-sample.py --root .` when you want package,
+   runtime and (if available) Docker evidence for the generated project.
+
+The default CLI mode still writes byte-compatible ZIP output to stdout; use
+`--output` when a new file in the current directory is more convenient.
+
+Choose the path that matches your use case:
+
+| You want to... | Start with... |
+| --- | --- |
+| Generate locally or in CI | The CLI and its `--output` option |
+| Let a trusted internal tool request a ZIP | The optional REST adapter |
+| Verify the complete sample path | `python scripts/generate-sample.py --root .` |
+
+The commands below use the `1.1.3` source candidate in this working tree. For
+the latest public stable artifacts, check out the `v1.1.2` tag and use its
+versioned jar name.
 
 POSIX shell:
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -39,7 +81,7 @@ PowerShell:
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.2-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.3-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -106,7 +148,7 @@ executable CLI artifact that includes its runtime dependencies, redirect that
 output to a file when you need a destination outside the cwd filename policy:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -132,14 +174,16 @@ the generated project. It then starts the packaged app for bounded health and
 greeting checks. Docker Compose parsing, image build and container-health
 checks run only when Docker and Compose are available; otherwise the report
 records `NOT_RUN`. Temporary apps, containers, Compose-owned local images, and
-verification directories are cleaned up. Set `ICARUS_CLI_ARGS_JSON` to a JSON array of CLI options if a
-downstream-compatible CLI needs a different argument layout; the ZIP still
-must be written to stdout.
+verification directories are cleaned up. A cold Docker cache gets a 600-second
+build window by default; set `ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS` to a positive
+number of seconds when a runner needs a different bound. Set
+`ICARUS_CLI_ARGS_JSON` to a JSON array of CLI options if a downstream-compatible
+CLI needs a different argument layout; the ZIP still must be written to stdout.
 
 ## Run the optional REST adapter
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.2.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.3.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip

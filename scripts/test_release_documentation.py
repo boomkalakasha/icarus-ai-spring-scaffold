@@ -19,15 +19,20 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertRegex(auto_source, r'<text[^>]*class="wordmark"[^>]*stroke-width="3"')
         self.assertRegex(explicit_light_surface.read_text(encoding="utf-8"), r'<text[^>]*stroke="#F7F4EC"[^>]*stroke-width="3"')
 
-    def test_v112_is_described_as_the_public_release_with_evidence_boundaries(self):
+    def test_v113_candidate_is_not_misreported_as_a_public_release(self):
         english = (ROOT / "README.md").read_text(encoding="utf-8")
         chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
         self.assertIn("public stable release is [`v1.1.2`]", english)
         self.assertIn("[`v1.1.2`]", chinese)
+        self.assertIn("`v1.1.3` candidate", english)
+        self.assertIn("`v1.1.3` 候选版本", chinese)
+        self.assertNotIn("public stable release is [`v1.1.3`]", english)
+        self.assertIn("Candidate notes for the next release", changelog)
         self.assertIn("checksums, SBOM, and build provenance", english)
         self.assertIn("校验和、SBOM 与构建来源证明", chinese)
+        self.assertIn("## [1.1.3] - 2026-08-26", changelog)
         self.assertIn("## [1.1.2] - 2026-08-26", changelog)
         self.assertIn("## [1.1.1] - 2026-08-26", changelog)
         self.assertIn("## [1.1.0] - 2026-08-26", changelog)
@@ -49,6 +54,37 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("作为团队或协作 Agent 的安全起点", chinese)
         self.assertIn("https://github.com/boomkalakasha/ai-first-vibe-coding-skill", chinese)
         self.assertIn("https://github.com/boomkalakasha/icarus-open-source-governance-skill", chinese)
+
+    def test_readmes_explain_core_features_and_first_project_path(self):
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+
+        self.assertIn("## At a glance", english)
+        self.assertIn("multi-module Spring Boot project ZIP", english)
+        self.assertIn("## Quick start (60 seconds)", english)
+        self.assertIn("Unpack it and read the generated `AGENTS.md`", english)
+        self.assertIn("python scripts/generate-sample.py --root .", english)
+
+        self.assertIn("## 一眼看懂：它能帮你做什么", chinese)
+        self.assertIn("Spring Boot 多模块项目 ZIP", chinese)
+        self.assertIn("## 60 秒快速开始", chinese)
+        self.assertIn("解压后先阅读生成项目里的 `AGENTS.md`", chinese)
+        self.assertIn("python scripts/generate-sample.py --root .", chinese)
+
+    def test_readmes_make_the_first_install_and_entry_choice_explicit(self):
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+        for source, markers in (
+            (english, ("No global Maven installation is required", "Generate locally or in CI", "optional REST adapter", "latest public stable artifacts")),
+            (chinese, ("不需要全局安装 Maven", "本地或 CI 生成项目", "可选 REST 适配器", "最新公开稳定物料")),
+        ):
+            for marker in markers:
+                self.assertIn(marker, source, marker)
+
+    def test_v113_changelog_records_timeout_cleanup(self):
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("process trees", changelog)
+        self.assertIn("ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS", changelog)
 
     def test_v111_changelog_records_direct_start_port_support(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")

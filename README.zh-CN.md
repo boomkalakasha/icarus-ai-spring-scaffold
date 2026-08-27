@@ -17,17 +17,54 @@ Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 
 
 本仓库采用 [Apache License 2.0](LICENSE)，遵循 SemVer；最新公开稳定版本为
 [`v1.1.2`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2)，
-发布物由已审核标签构建，并附带校验和、SBOM 与构建来源证明。
+发布物由已审核标签构建，并附带校验和、SBOM 与构建来源证明。本分支包含已完成本地验收的
+`v1.1.3` 候选版本；在标签、CI、制品和发布门禁独立核验前，它还不是公开 Release。
+
+## 一眼看懂：它能帮你做什么
+
+| 你的目标 | Icarus 提供什么 | 你会先得到什么 |
+| --- | --- | --- |
+| 开始一个 Java 服务 | 经过校验的 Spring Boot 多模块项目 ZIP | 不再从空目录起步，而是一套可审查骨架 |
+| 让生成过程更安全 | 坐标约束、路径隔离、ZIP 穿越检查和禁止覆盖 | 更适合交给团队或 Agent 继续演进的可预测制品 |
+| 选择接入方式 | 本地 CLI 与可选 REST 适配器 | 开发者、CI 或可信内部边缘都能调用的入口 |
+| 确认生成项目是否能工作 | package、health、greeting，以及可选 Docker Compose 检查 | 针对样例的真实证据；不可用的检查会明确记为 `NOT_RUN` |
+
+常见场景包括：快速启动一个小型 Spring 服务、为多个协作 Agent 提供一致的
+项目起点，或在技术分享中演示服务结构。它是生成器和可审查的起点，不替代
+具体业务设计、安全审查或部署运维。
 
 ## 60 秒快速开始
 
-先构建完整 reactor，再生成一个 ZIP。CLI 默认仍将字节兼容的 ZIP 写到标准输出。
+第一次使用不需要全局安装 Maven：直接使用仓库自带的 wrapper，并把生成的 ZIP
+留在当前目录即可。
+
+第一次使用按这四步走：
+
+1. 先构建完整 reactor，让 CLI 及其依赖在本地可用。
+2. 用下面的命令生成 `demo-service.zip`。
+3. 解压后先阅读生成项目里的 `AGENTS.md`、README 和模块结构，再开始写业务代码。
+4. 需要验证生成项目时，执行 `python scripts/generate-sample.py --root .`，获取
+   package、运行态以及（Docker 可用时）Compose 证据。
+
+CLI 默认仍将字节兼容的 ZIP 写到标准输出；想要更直观地得到文件时，使用
+`--output` 写入当前目录的新文件。
+
+按你的目标选择入口：
+
+| 你想做什么 | 从哪里开始 |
+| --- | --- |
+| 本地或 CI 生成项目 | CLI 及其 `--output` 选项 |
+| 让可信内部工具请求 ZIP | 可选 REST 适配器 |
+| 验证完整样例链路 | `python scripts/generate-sample.py --root .` |
+
+下面命令使用的是本工作树中的 `1.1.3` 源码候选版。需要使用最新公开稳定物料时，
+请切到 `v1.1.2` 标签，并使用对应版本的 jar 文件名。
 
 POSIX shell：
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -37,7 +74,7 @@ PowerShell：
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.2-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.3-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -97,7 +134,7 @@ CLI 默认将 ZIP 字节写入标准输出。需要输出到当前目录文件�
 `--output demo-service.zip`；也可以在明确的外部策略下使用标准输出重定向：
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.2-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -119,12 +156,13 @@ python scripts/generate-sample.py --root .
 中运行 Maven `package`，随后在有界时间内检查健康和 greeting 接口。只有 Docker 和
 Compose 可用时才执行 Compose 解析、镜像构建和容器健康检查；否则报告明确记录
 `NOT_RUN`。临时进程、容器、Compose 自建本地镜像和验证目录都会清理。如需适配兼容下游 CLI 参数，可设置
-JSON 数组环境变量 `ICARUS_CLI_ARGS_JSON`；ZIP 仍必须写入标准输出。
+JSON 数组环境变量 `ICARUS_CLI_ARGS_JSON`；冷缓存 Docker 构建默认有 600 秒窗口，
+也可以通过正数环境变量 `ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS` 调整；ZIP 仍必须写入标准输出。
 
 ## 运行可选 REST 适配器
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.2.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.3.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip

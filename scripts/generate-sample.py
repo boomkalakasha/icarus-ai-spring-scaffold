@@ -42,12 +42,37 @@ DEFAULT_ARGS = [
 RUNTIME_TIMEOUT_SECONDS = 45
 RUNTIME_POLL_SECONDS = 0.5
 DOCKER_CAPABILITY_TIMEOUT_SECONDS = 15
-DOCKER_CHECK_TIMEOUT_SECONDS = 180
+DEFAULT_DOCKER_CHECK_TIMEOUT_SECONDS = 600
+DOCKER_CHECK_TIMEOUT_SECONDS = DEFAULT_DOCKER_CHECK_TIMEOUT_SECONDS
 DOCKER_HEALTH_TIMEOUT_SECONDS = 60
 
 
 class VerificationError(RuntimeError):
     """A safe, user-actionable verification failure."""
+
+
+def terminate_process_tree(process: subprocess.Popen[str]) -> None:
+    """Stop a timed-out command and any descendants that still hold its files."""
+
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    elif process.poll() is None:
+        process.terminate()
+
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
 
 
 def run(
@@ -58,19 +83,21 @@ def run(
     capture_output: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     print(f"$ {' '.join(command)}", flush=True)
+    process = subprocess.Popen(
+        command,
+        cwd=cwd,
+        stdout=subprocess.PIPE if capture_output else None,
+        stderr=subprocess.PIPE if capture_output else None,
+        text=capture_output,
+    )
     try:
-        completed = subprocess.run(
-            command,
-            cwd=cwd,
-            check=False,
-            timeout=timeout,
-            capture_output=capture_output,
-            text=capture_output,
-        )
+        stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as exc:
+        terminate_process_tree(process)
         raise VerificationError(
             f"Command timed out after {timeout:g}s: {command[0]}"
         ) from exc
+    completed = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
     if completed.returncode != 0:
         raise VerificationError(
             f"Command exited with status {completed.returncode}: {command[0]}"
@@ -374,6 +401,19 @@ def docker_command() -> tuple[str, str] | tuple[None, str]:
     return executable, "Docker and Docker Compose available"
 
 
+def docker_check_timeout_seconds() -> float:
+    """Allow slower first-time image pulls without accepting an unsafe timeout."""
+
+    raw = os.environ.get("ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS")
+    if raw is None:
+        return float(DEFAULT_DOCKER_CHECK_TIMEOUT_SECONDS)
+    try:
+        timeout = float(raw)
+    except ValueError:
+        return float(DEFAULT_DOCKER_CHECK_TIMEOUT_SECONDS)
+    return timeout if timeout > 0 else float(DEFAULT_DOCKER_CHECK_TIMEOUT_SECONDS)
+
+
 def run_docker_checks(project_root: Path, root: Path) -> str:
     """Run Docker Compose parse, docker build, container health, and docker compose down cleanup."""
 
@@ -385,11 +425,12 @@ def run_docker_checks(project_root: Path, root: Path) -> str:
     project_name = f"icarus-scaffold-sample-{os.getpid()}"
     compose = [docker, "compose", "--project-name", project_name, "-f", "compose.yaml"]
     image = f"icarus-scaffold-sample-verify:{os.getpid()}"
+    docker_timeout = docker_check_timeout_seconds()
     container_id = ""
     try:
-        run(compose + ["config"], project_root, timeout=DOCKER_CHECK_TIMEOUT_SECONDS)
-        run([docker, "build", "--tag", image, "."], project_root, timeout=DOCKER_CHECK_TIMEOUT_SECONDS)
-        run(compose + ["up", "-d", "--build"], project_root, timeout=DOCKER_CHECK_TIMEOUT_SECONDS)
+        run(compose + ["config"], project_root, timeout=docker_timeout)
+        run([docker, "build", "--tag", image, "."], project_root, timeout=docker_timeout)
+        run(compose + ["up", "-d", "--build"], project_root, timeout=docker_timeout)
 
         lookup = run(compose + ["ps", "-q", "app"], project_root,
                      timeout=DOCKER_CAPABILITY_TIMEOUT_SECONDS, capture_output=True)
