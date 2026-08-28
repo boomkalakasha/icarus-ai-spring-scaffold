@@ -7,7 +7,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -35,7 +37,7 @@ class ScaffoldGeneratorContractTest {
         assertTrue(names.contains("AGENTS.md"));
         assertTrue(names.contains("README.md"));
         assertTrue(names.contains("README.zh-CN.md"));
-        assertTrue(names.contains("LICENSE"));
+        assertFalse(names.contains("LICENSE"));
         assertTrue(names.contains("SUPPORT.md"));
         assertTrue(names.contains("Dockerfile"));
         assertTrue(names.contains("compose.yaml"));
@@ -49,8 +51,26 @@ class ScaffoldGeneratorContractTest {
         assertFalse(allText.contains("Spire"));
         assertFalse(allText.contains("password"));
         assertFalse(allText.contains("secret"));
-        assertTrue(allText.contains("Apache License"));
+        assertTrue(allText.contains("No project license was declared"));
         assertTrue(allText.contains("/actuator/health"));
+    }
+
+    @Test
+    void emitsOnlyTheExplicitlySelectedLicenseAndAttribution() throws IOException {
+        Map<String, byte[]> apacheFiles = readZip(generator.generate(new ScaffoldRequest(
+                "apache-service", "com.example", "com.example.apache", 8088, "Apache sample",
+                "Apache-2.0", "Example Labs", 2026)));
+        String apache = new String(apacheFiles.get("LICENSE"), StandardCharsets.UTF_8);
+        assertTrue(apache.contains("Apache License"));
+        assertTrue(apache.contains("Copyright 2026 Example Labs"));
+
+        Map<String, byte[]> mitFiles = readZip(generator.generate(new ScaffoldRequest(
+                "mit-service", "com.example", "com.example.mit", 8089, "MIT sample",
+                "MIT", "Example Authors", 2025)));
+        String mit = new String(mitFiles.get("LICENSE"), StandardCharsets.UTF_8);
+        assertTrue(mit.contains("MIT License"));
+        assertTrue(mit.contains("Copyright (c) 2025 Example Authors"));
+        assertFalse(mit.contains("Icarus AI Spring Scaffold contributors"));
     }
 
     private static String readZip(byte[] zip, List<String> names) throws IOException {
@@ -63,5 +83,15 @@ class ScaffoldGeneratorContractTest {
             }
         }
         return content.toString();
+    }
+
+    private static Map<String, byte[]> readZip(byte[] zip) throws IOException {
+        Map<String, byte[]> files = new HashMap<>();
+        try (ZipInputStream input = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            for (ZipEntry entry = input.getNextEntry(); entry != null; entry = input.getNextEntry()) {
+                files.put(entry.getName(), input.readAllBytes());
+            }
+        }
+        return files;
     }
 }

@@ -19,23 +19,39 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertRegex(auto_source, r'<text[^>]*class="wordmark"[^>]*stroke-width="3"')
         self.assertRegex(explicit_light_surface.read_text(encoding="utf-8"), r'<text[^>]*stroke="#F7F4EC"[^>]*stroke-width="3"')
 
-    def test_v113_candidate_is_not_misreported_as_a_public_release(self):
+    def test_readmes_use_dynamic_release_facts_and_show_a_generated_outcome(self):
         english = (ROOT / "README.md").read_text(encoding="utf-8")
         chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-        self.assertIn("public stable release is [`v1.1.2`]", english)
-        self.assertIn("[`v1.1.2`]", chinese)
-        self.assertIn("`v1.1.3` candidate", english)
-        self.assertIn("`v1.1.3` 候选版本", chinese)
-        self.assertNotIn("public stable release is [`v1.1.3`]", english)
+        for source in (english, chinese):
+            self.assertIn("<!-- icarus-release-fact: dynamic -->", source)
+            self.assertIn("https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/latest", source)
+            self.assertIn("https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases", source)
+        self.assertNotIn("latest public stable release is", english.lower())
+        self.assertNotIn("最新公开稳定版是", chinese)
+        self.assertLess(english.index("## What you get"), english.index("## What is here"))
+        self.assertIn("Illustrative generated result", english)
+        self.assertIn("GET /api/greetings?subject=team", english)
+        self.assertIn('{"subject":"team","message":"Hello, team!"}', english)
+        self.assertLess(chinese.index("## 你会得到什么"), chinese.index("## 仓库内容"))
+        self.assertIn("示意生成结果", chinese)
+        self.assertIn('{"subject":"team","message":"Hello, team!"}', chinese)
         self.assertIn("Candidate notes for the next release", changelog)
         self.assertIn("checksums, SBOM, and build provenance", english)
         self.assertIn("校验和、SBOM 与构建来源证明", chinese)
-        self.assertIn("## [1.1.3] - 2026-08-26", changelog)
+        self.assertIn("## [1.1.4] - 2026-08-28", changelog)
         self.assertIn("## [1.1.2] - 2026-08-26", changelog)
         self.assertIn("## [1.1.1] - 2026-08-26", changelog)
         self.assertIn("## [1.1.0] - 2026-08-26", changelog)
+
+        workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        self.assertIn(
+            "icarus-open-source-governance-skill/actions/release-doc-sync@"
+            "12999d05ccc73800b5d6c49b709e2f09e8303519",
+            workflow,
+        )
+        self.assertIn("steps.release-metadata.outputs.version", workflow)
 
     def test_runtime_troubleshooting_describes_the_dynamic_local_port_truthfully(self):
         troubleshooting = (ROOT / "docs" / "troubleshooting.md").read_text(encoding="utf-8")
@@ -51,7 +67,7 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("https://github.com/boomkalakasha/ai-first-vibe-coding-skill", english)
         self.assertIn("https://github.com/boomkalakasha/icarus-open-source-governance-skill", english)
         self.assertIn("从一句需求，生成一套可审查的服务骨架。", chinese)
-        self.assertIn("作为团队或协作 Agent 的安全起点", chinese)
+        self.assertIn("可审查、可构建、可测试的起点", chinese)
         self.assertIn("https://github.com/boomkalakasha/ai-first-vibe-coding-skill", chinese)
         self.assertIn("https://github.com/boomkalakasha/icarus-open-source-governance-skill", chinese)
 
@@ -75,8 +91,8 @@ class ReleaseDocumentationTests(unittest.TestCase):
         english = (ROOT / "README.md").read_text(encoding="utf-8")
         chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
         for source, markers in (
-            (english, ("No global Maven installation is required", "Generate locally or in CI", "optional REST adapter", "latest public stable artifacts")),
-            (chinese, ("不需要全局安装 Maven", "本地或 CI 生成项目", "可选 REST 适配器", "最新公开稳定物料")),
+            (english, ("No global Maven installation is required", "Generate locally or in CI", "optional REST adapter", "latest GitHub Release")),
+            (chinese, ("不需要全局安装 Maven", "本地或 CI 生成项目", "可选 REST 适配器", "最新 GitHub Release")),
         ):
             for marker in markers:
                 self.assertIn(marker, source, marker)

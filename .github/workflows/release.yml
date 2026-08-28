@@ -35,6 +35,7 @@ jobs:
           cache: maven
 
       - name: Confirm SemVer tag and main ancestry
+        id: release-metadata
         shell: bash
         run: |
           set -euo pipefail
@@ -51,6 +52,14 @@ jobs:
             echo "Tag $tag does not match Maven project version $project_version" >&2
             exit 1
           fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify dynamic README release facts
+        uses: boomkalakasha/icarus-open-source-governance-skill/actions/release-doc-sync@12999d05ccc73800b5d6c49b709e2f09e8303519
+        with:
+          tag: ${{ github.ref_name }}
+          version: ${{ steps.release-metadata.outputs.version }}
+          repository: ${{ github.repository }}
 
       - name: Build the reactor and run tests
         run: mvn -B -ntp -Dstyle.color=never clean verify

@@ -1,6 +1,7 @@
 package io.github.boomkalakasha.icarus.scaffold.server;
 
 import io.github.boomkalakasha.icarus.scaffold.core.ScaffoldGenerator;
+import io.github.boomkalakasha.icarus.scaffold.core.model.ScaffoldRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -11,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -62,6 +64,32 @@ class ScaffoldControllerContractTest {
                                 {"artifact":"../escape","group":"com.example","package":"com.example.orders","port":8080,"description":"safe"}
                                 """))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsAPartialLicenseDeclarationBeforeGeneration() throws Exception {
+        mockMvc.perform(post("/api/scaffolds")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"artifact":"orders","group":"com.example","package":"com.example.orders","port":8080,"description":"safe","license":"MIT"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void mapsACompleteLicenseDeclarationToTheCoreRequest() throws Exception {
+        when(generator.generate(any())).thenReturn(new byte[]{'P', 'K', 3, 4});
+
+        mockMvc.perform(post("/api/scaffolds")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"artifact":"orders","group":"com.example","package":"com.example.orders","port":8080,"description":"safe","license":"MIT","copyrightHolder":"Example Authors","copyrightYear":2026}
+                                """))
+                .andExpect(status().isOk());
+
+        verify(generator).generate(new ScaffoldRequest(
+                "orders", "com.example", "com.example.orders", 8080, "safe",
+                "MIT", "Example Authors", 2026));
     }
 
     @Test

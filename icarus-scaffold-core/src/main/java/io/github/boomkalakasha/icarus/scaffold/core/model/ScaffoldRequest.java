@@ -11,7 +11,14 @@ public record ScaffoldRequest(
         String group,
         String packageName,
         int port,
-        String description) {
+        String description,
+        String license,
+        String copyrightHolder,
+        Integer copyrightYear) {
+
+    public ScaffoldRequest(String artifact, String group, String packageName, int port, String description) {
+        this(artifact, group, packageName, port, description, null, null, null);
+    }
 
     public static ScaffoldRequest defaults() {
         return new ScaffoldRequest(

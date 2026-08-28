@@ -17,6 +17,9 @@ public final class ScaffoldRequestPayload {
     private String packageName;
     private Integer port;
     private String description;
+    private String license;
+    private String copyrightHolder;
+    private Integer copyrightYear;
     private final Set<String> unknownProperties = new LinkedHashSet<>();
 
     public ScaffoldRequestPayload() {
@@ -56,6 +59,21 @@ public final class ScaffoldRequestPayload {
         this.description = description;
     }
 
+    @JsonProperty("license")
+    public void setLicense(String license) {
+        this.license = license;
+    }
+
+    @JsonProperty("copyrightHolder")
+    public void setCopyrightHolder(String copyrightHolder) {
+        this.copyrightHolder = copyrightHolder;
+    }
+
+    @JsonProperty("copyrightYear")
+    public void setCopyrightYear(Integer copyrightYear) {
+        this.copyrightYear = copyrightYear;
+    }
+
     @JsonAnySetter
     public void captureUnknownProperty(String name, Object value) {
         unknownProperties.add(name);
@@ -65,6 +83,8 @@ public final class ScaffoldRequestPayload {
         if (!unknownProperties.isEmpty()) {
             throw new InvalidScaffoldRequestException("unsupported request field");
         }
-        return new ScaffoldRequest(artifact, group, packageName, port == null ? 0 : port, description);
+        return new ScaffoldRequest(
+                artifact, group, packageName, port == null ? 0 : port, description,
+                license, copyrightHolder, copyrightYear);
     }
 }

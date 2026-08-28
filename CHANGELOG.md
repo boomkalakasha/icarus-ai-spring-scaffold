@@ -4,6 +4,28 @@ All notable public changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases
 follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.4] - 2026-08-28
+
+> Candidate notes for the next release; this version is not public until its
+> tag, CI, assets, and release gates are independently verified.
+
+### Fixed
+
+- Stopped generated projects from inheriting an Icarus copyright or LICENSE by
+  default; a LICENSE is now emitted only when the caller supplies a supported
+  license, rights holder, and year as one complete decision.
+- Added validated Apache-2.0 and MIT rendering across the core, CLI and REST
+  adapters, including negative tests for partial or unsupported license input.
+
+### Changed
+
+- Reworked the bilingual first-glance description around a consistent,
+  reviewable, buildable and testable Java service starting point.
+- Replaced hard-coded latest-version claims with dynamic GitHub Release facts
+  and added an illustrative generated project tree and runnable API result.
+- Added the reusable Governance release-documentation gate, pinned to the
+  reviewed `main` commit SHA, before release packaging.
+
 ## [1.1.3] - 2026-08-26
 
 > Candidate notes for the next release; this version is not public until its
@@ -59,6 +81,7 @@ Initial public release line:
 - GitHub CI, dependency automation, static security analysis, checksums, SBOM
   and build-provenance release metadata.
 
+[1.1.4]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.4
 [1.1.3]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.3
 [1.1.2]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2
 [1.1.1]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.1

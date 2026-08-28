@@ -40,6 +40,31 @@ class ScaffoldCliContractTest {
         }
         assertTrue(names.contains("pom.xml"));
         assertTrue(names.contains("boot/pom.xml"));
+        assertFalse(names.contains("LICENSE"));
+    }
+
+    @Test
+    void mapsAnExplicitLicenseDeclarationIntoTheGeneratedZip() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream errors = new ByteArrayOutputStream();
+        int exitCode = new CommandLine(new ScaffoldCli(
+                new ScaffoldGenerator(), output, new PrintWriter(errors, true)))
+                .execute("--artifact", "licensed-service", "--group", "com.example",
+                        "--package", "com.example.licensed", "--port", "8090",
+                        "--license", "MIT", "--copyright-holder", "Example Authors",
+                        "--copyright-year", "2026");
+
+        assertEquals(0, exitCode);
+        assertEquals(0, errors.size());
+        String license = null;
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(output.toByteArray()))) {
+            for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                if ("LICENSE".equals(entry.getName())) {
+                    license = new String(zip.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                }
+            }
+        }
+        assertTrue(license != null && license.contains("Copyright (c) 2026 Example Authors"));
     }
 
     @Test

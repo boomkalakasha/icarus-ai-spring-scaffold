@@ -37,6 +37,15 @@ public final class ScaffoldCli implements Callable<Integer> {
     @Option(names = "--description", defaultValue = "A generated Spring service", description = "Short project description")
     private String description;
 
+    @Option(names = "--license", description = "Optional generated-project license: Apache-2.0 or MIT")
+    private String license;
+
+    @Option(names = "--copyright-holder", description = "Generated-project copyright holder; requires --license and --copyright-year")
+    private String copyrightHolder;
+
+    @Option(names = "--copyright-year", description = "Generated-project copyright year; requires --license and --copyright-holder")
+    private Integer copyrightYear;
+
     @Option(names = "--output", paramLabel = "<filename.zip>",
             description = "Write to one new .zip filename directly under the current working directory")
     private String outputFileName;
@@ -80,7 +89,9 @@ public final class ScaffoldCli implements Callable<Integer> {
         }
 
         try {
-            byte[] zip = generator.generate(new ScaffoldRequest(artifact, group, packageName, port, description));
+            byte[] zip = generator.generate(new ScaffoldRequest(
+                    artifact, group, packageName, port, description,
+                    license, copyrightHolder, copyrightYear));
             if (requestedOutput == null) {
                 output.write(zip);
                 output.flush();
