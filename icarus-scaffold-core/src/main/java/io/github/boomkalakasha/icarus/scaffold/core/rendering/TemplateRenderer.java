@@ -38,7 +38,6 @@ public final class TemplateRenderer {
             ".github/PULL_REQUEST_TEMPLATE.md.ftl",
             "SECURITY.md.ftl",
             "SUPPORT.md.ftl",
-            "LICENSE.ftl",
             "docker/HealthCheck.java.ftl",
             "domain/pom.xml.ftl",
             "domain/src/main/java/__packagePath__/domain/Greeting.java.ftl",
@@ -107,21 +106,42 @@ public final class TemplateRenderer {
         model.put("packagePath", request.packageName().replace('.', '/'));
         model.put("port", Integer.toString(request.port()));
         model.put("description", request.description());
+        model.put("licenseDeclared", request.license() != null);
+        model.put("license", request.license());
+        model.put("copyrightHolder", request.copyrightHolder());
+        model.put("copyrightYear", request.copyrightYear() == null
+                ? null
+                : Integer.toString(request.copyrightYear()));
 
         for (String templatePath : TEMPLATE_PATHS) {
-            String relative = templatePath.replace("__packagePath__", (String) model.get("packagePath"));
-            if (relative.endsWith(".ftl")) {
-                relative = relative.substring(0, relative.length() - ".ftl".length());
-            }
-            Path target = ZipSafety.resolveInside(root, relative);
-            Files.createDirectories(target.getParent());
-            try (StringWriter rendered = new StringWriter()) {
-                Template template = configuration.getTemplate("project/" + templatePath);
-                template.process(model, rendered);
-                Files.writeString(target, rendered.toString(), StandardCharsets.UTF_8);
-            } catch (TemplateException exception) {
-                throw new IOException("template rendering failed for " + templatePath, exception);
-            }
+            renderTemplate(root, templatePath, null, model);
+        }
+        if (request.license() != null) {
+            String licenseTemplate = switch (request.license()) {
+                case "Apache-2.0" -> "LICENSE.ftl";
+                case "MIT" -> "LICENSE.MIT.ftl";
+                default -> throw new IllegalArgumentException("unsupported license: " + request.license());
+            };
+            renderTemplate(root, licenseTemplate, "LICENSE", model);
+        }
+    }
+
+    private void renderTemplate(Path root, String templatePath, String outputPath,
+                                Map<String, Object> model) throws IOException {
+        String relative = outputPath == null
+                ? templatePath.replace("__packagePath__", (String) model.get("packagePath"))
+                : outputPath;
+        if (relative.endsWith(".ftl")) {
+            relative = relative.substring(0, relative.length() - ".ftl".length());
+        }
+        Path target = ZipSafety.resolveInside(root, relative);
+        Files.createDirectories(target.getParent());
+        try (StringWriter rendered = new StringWriter()) {
+            Template template = configuration.getTemplate("project/" + templatePath);
+            template.process(model, rendered);
+            Files.writeString(target, rendered.toString(), StandardCharsets.UTF_8);
+        } catch (TemplateException exception) {
+            throw new IOException("template rendering failed for " + templatePath, exception);
         }
     }
 

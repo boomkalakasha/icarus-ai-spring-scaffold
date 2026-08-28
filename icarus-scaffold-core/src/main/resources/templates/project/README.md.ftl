@@ -46,5 +46,13 @@ list before publishing or deploying it.
 
 ## Support and license
 
-See [SUPPORT.md](SUPPORT.md), [SECURITY.md](SECURITY.md) and [LICENSE](LICENSE)
-for the downstream service's local support, security and licensing boundaries.
+See [SUPPORT.md](SUPPORT.md) and [SECURITY.md](SECURITY.md) for the downstream
+service's local support and security boundaries.
+<#if licenseDeclared>
+This generated project declares the `${license}` license in [LICENSE](LICENSE),
+with copyright attributed to `${copyrightHolder}` for ${copyrightYear}.
+<#else>
+No project license was declared during generation, so this ZIP intentionally
+contains no `LICENSE`. The downstream rights holder must make and document the
+licensing decision before public distribution.
+</#if>

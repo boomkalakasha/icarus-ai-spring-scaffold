@@ -11,8 +11,11 @@ boot/            executable application
 docker/          JRE-only container health probe
 ```
 
-The generated archive also contains `LICENSE`, `SUPPORT.md`, `SECURITY.md`,
-bilingual READMEs, tests, Dockerfile and Compose configuration.
+The generated archive also contains `SUPPORT.md`, `SECURITY.md`, bilingual
+READMEs, tests, Dockerfile and Compose configuration. It contains no
+`LICENSE` by default. When the caller explicitly supplies a supported
+license, rights holder and year together, the archive contains the selected
+`Apache-2.0` or `MIT` license and the generated README records that choice.
 
 ## Build and run
 

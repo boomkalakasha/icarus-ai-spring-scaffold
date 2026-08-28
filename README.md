@@ -8,7 +8,7 @@
 >
 > **From one idea to a reviewable service skeleton.**
 
-When a new Java 17 / Spring Boot service needs a clean, testable beginning, Icarus generates a multi-module ZIP through the CLI or REST adapter—ready for a team or collaborating agents to inspect, build, and evolve.
+From one service requirement, Icarus uses its CLI or REST adapter to generate a consistent Java 17 / Spring Boot starting point that a team or collaborating agents can inspect, build, test, and evolve.
 
 `icarus-ai-spring-scaffold` is a security-focused, AI-friendly generator for
 small Spring Boot projects. It validates the project coordinates and writes a
@@ -16,12 +16,13 @@ ZIP archive in memory before returning it. The generated project is intended as
 a reviewable starting point for a Java 17 / Spring Boot 3 application; it is
 not a hosted service or a deployment guarantee.
 
-The repository is released under the [Apache License 2.0](LICENSE). The latest
-public stable release is [`v1.1.2`](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2),
-built from its reviewed tag with checksums, SBOM, and build provenance. This
-source tree contains the reviewed `v1.1.3` candidate; it is not a public
-release until its tag, CI, assets, and release gates are independently verified.
-Versions follow SemVer.
+The repository itself is released under the [Apache License 2.0](LICENSE).
+<!-- icarus-release-fact: dynamic -->
+Published artifacts are available from the
+[latest GitHub Release](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/latest)
+and the [complete release history](https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases).
+Reviewed tags include checksums, SBOM, and build provenance when their remote
+release gates pass. Versions follow SemVer.
 
 ## At a glance
 
@@ -63,15 +64,14 @@ Choose the path that matches your use case:
 | Let a trusted internal tool request a ZIP | The optional REST adapter |
 | Verify the complete sample path | `python scripts/generate-sample.py --root .` |
 
-The commands below use the `1.1.3` source candidate in this working tree. For
-the latest public stable artifacts, check out the `v1.1.2` tag and use its
-versioned jar name.
+The commands below build this checkout. For published artifacts, start from
+the latest GitHub Release and use the jar name matching that immutable tag.
 
 POSIX shell:
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
   --description "Generated sample" --output demo-service.zip
@@ -81,7 +81,7 @@ PowerShell:
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.3-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.4-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
   --description "Generated sample" --output demo-service.zip
@@ -91,6 +91,35 @@ java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.3-all.jar `
 working directory. Absolute, nested, `..`, non-ZIP and existing targets are
 rejected; `CREATE_NEW` protects against a validation/write race. Omit it to
 preserve the original stdout ZIP contract.
+
+## What you get
+
+**Illustrative generated result — paths and responses below describe the
+bundled sample contract, not a deployed service:**
+
+```text
+demo-service/
+├── AGENTS.md
+├── pom.xml
+├── domain/
+├── application/
+├── infrastructure/
+├── api/
+└── boot/
+```
+
+```http
+GET /api/greetings?subject=team
+200 {"subject":"team","message":"Hello, team!"}
+
+GET /actuator/health
+200 {"status":"UP"}
+```
+
+By default the ZIP has no `LICENSE`. Add `--license`,
+`--copyright-holder`, and `--copyright-year` together when the actual
+rights holder has made that decision; supported identifiers are
+`Apache-2.0` and `MIT`.
 
 ## What is here
 
@@ -148,7 +177,7 @@ executable CLI artifact that includes its runtime dependencies, redirect that
 output to a file when you need a destination outside the cwd filename policy:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.3-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -183,7 +212,7 @@ CLI needs a different argument layout; the ZIP still must be written to stdout.
 ## Run the optional REST adapter
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.3.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.4.jar
 curl --fail-with-body -H "Content-Type: application/json" \
   --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip
@@ -199,7 +228,9 @@ multi-tenant service.
 ## Security boundaries
 
 Inputs such as artifact, group, package, port and description are bounded and
-validated. Template paths are normalized and must remain under a temporary
+validated. Optional license, copyright holder, and year values are atomic and
+bounded; the generator rejects partial declarations instead of guessing
+ownership. Template paths are normalized and must remain under a temporary
 root; ZIP entries cannot be absolute or contain parent traversal. The public
 generator does not accept shell commands, arbitrary template directories,
 overwrite flags or generated default credentials. Requests are not logged in

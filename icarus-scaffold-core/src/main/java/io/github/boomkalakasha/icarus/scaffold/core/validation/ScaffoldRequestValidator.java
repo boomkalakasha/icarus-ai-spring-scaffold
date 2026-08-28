@@ -19,6 +19,7 @@ public final class ScaffoldRequestValidator {
             "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while",
             "true", "false", "null", "record", "sealed", "permits", "non-sealed", "var", "yield");
     private static final String SAFE_DESCRIPTION_PUNCTUATION = " .,;:_()[]/'\"!?&+-=#@%*";
+    private static final Set<String> SUPPORTED_LICENSES = Set.of("Apache-2.0", "MIT");
 
     public void validate(ScaffoldRequest request) {
         if (request == null) {
@@ -31,6 +32,7 @@ public final class ScaffoldRequestValidator {
             throw new InvalidScaffoldRequestException("port must be between 1024 and 65535");
         }
         validateDescription(request.description());
+        validateLicenseDeclaration(request);
     }
 
     public static void validateRequest(ScaffoldRequest request) {
@@ -66,6 +68,40 @@ public final class ScaffoldRequestValidator {
                 throw new InvalidScaffoldRequestException("description contains an unsupported character");
             }
             offset += Character.charCount(codePoint);
+        }
+    }
+
+    private static void validateLicenseDeclaration(ScaffoldRequest request) {
+        boolean anyValue = request.license() != null
+                || request.copyrightHolder() != null
+                || request.copyrightYear() != null;
+        if (!anyValue) {
+            return;
+        }
+        if (request.license() == null
+                || request.copyrightHolder() == null
+                || request.copyrightHolder().isBlank()
+                || request.copyrightYear() == null) {
+            throw new InvalidScaffoldRequestException(
+                    "license, copyright holder and copyright year must be provided together");
+        }
+        if (!SUPPORTED_LICENSES.contains(request.license())) {
+            throw new InvalidScaffoldRequestException("license must be Apache-2.0 or MIT");
+        }
+        if (request.copyrightHolder().length() > 160) {
+            throw new InvalidScaffoldRequestException("copyright holder must contain 1 to 160 characters");
+        }
+        for (int offset = 0; offset < request.copyrightHolder().length(); ) {
+            int codePoint = request.copyrightHolder().codePointAt(offset);
+            if (Character.isISOControl(codePoint)
+                    || (!Character.isLetterOrDigit(codePoint)
+                    && SAFE_DESCRIPTION_PUNCTUATION.indexOf(codePoint) < 0)) {
+                throw new InvalidScaffoldRequestException("copyright holder contains an unsupported character");
+            }
+            offset += Character.charCount(codePoint);
+        }
+        if (request.copyrightYear() < 1900 || request.copyrightYear() > 9999) {
+            throw new InvalidScaffoldRequestException("copyright year must be between 1900 and 9999");
         }
     }
 }

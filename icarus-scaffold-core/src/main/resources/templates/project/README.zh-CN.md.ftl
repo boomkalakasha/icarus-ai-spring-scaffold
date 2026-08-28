@@ -45,5 +45,12 @@ docker compose up --build
 
 ## 支持与许可证
 
-请阅读 [SUPPORT.md](SUPPORT.md)、[SECURITY.md](SECURITY.md) 和
-[LICENSE](LICENSE)，为生成服务补充实际维护团队的支持、安全和许可证边界。
+请阅读 [SUPPORT.md](SUPPORT.md) 和 [SECURITY.md](SECURITY.md)，为生成服务
+补充实际维护团队的支持与安全边界。
+<#if licenseDeclared>
+本项目在生成时显式选择了 `${license}` 许可证；[LICENSE](LICENSE) 中的
+权利人为 `${copyrightHolder}`，年份为 ${copyrightYear}。
+<#else>
+生成时没有声明项目许可证，因此 ZIP 会有意省略 `LICENSE`。公开分发前，
+应由实际权利人决定并记录适用许可证。
+</#if>
