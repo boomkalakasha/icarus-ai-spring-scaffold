@@ -8,9 +8,12 @@
 >
 > **From one idea to a reviewable service skeleton.**
 
-从一句服务需求开始，Icarus 通过 CLI 或 REST 生成统一的 Java 17 / Spring Boot 多模块工程，让团队或协作 Agent 直接从可审查、可构建、可测试的起点继续开发。
+从一份已确认的服务需求开始，Icarus 通过 CLI 或 REST 生成统一的 Java 17 /
+Spring Boot 起点，让团队或协作 Agent 直接从可审查、可构建、可测试的起点继续开发。
+Scaffold 不内置或托管大模型，也不解释开放式自然语言；当前 Vibe Coding 工具或
+IDEA 插件可以帮助把对话整理为已确认的 CLI 或 REST 请求。
 
-`icarus-ai-spring-scaffold` 是一个安全优先、面向 AI 友好研发流程的
+`icarus-ai-spring-scaffold` 是一个安全优先、方便宿主工具接入的
 Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 后返回。生成的
 项目是 Java 17 / Spring Boot 3 应用的可审查起点，不是托管服务，也不承诺任何
 部署环境的可用性。
@@ -43,7 +46,8 @@ Spring Boot 项目生成器。它校验项目坐标，并在内存中生成 ZIP 
 第一次使用按这四步走：
 
 1. 先构建完整 reactor，让 CLI 及其依赖在本地可用。
-2. 用下面的命令生成 `demo-service.zip`。
+2. 用下面的命令生成 `demo-service.zip`。示例选择 simple profile，让小服务从一个
+   Maven 模块开始。
 3. 解压后先阅读生成项目里的 `AGENTS.md`、README 和模块结构，再开始写业务代码。
 4. 需要验证生成项目时，执行 `python scripts/generate-sample.py --root .`，获取
    package、运行态以及（Docker 可用时）Compose 证据。
@@ -66,29 +70,44 @@ POSIX shell：
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.2.0-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
-  --description "Generated sample" --output demo-service.zip
+  --description "Generated sample" --profile simple --output demo-service.zip
 ```
 
 PowerShell：
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.4-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.2.0-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
-  --description "Generated sample" --output demo-service.zip
+  --description "Generated sample" --profile simple --output demo-service.zip
 ```
 
 `--output` 只接受当前工作目录下的一个新 `*.zip` 文件名。绝对路径、嵌套路径、
 `..`、非 ZIP 后缀和已存在目标都会被拒绝，并用 `CREATE_NEW` 防止校验与写入之间
 的竞争覆盖。省略该选项即可保留标准输出契约。
 
+## 选择架构 profile
+
+CLI 和 REST 请求共用两个 profile：
+
+| Profile | 生成结构 | 适合什么时候 |
+| --- | --- | --- |
+| `simple` | 一个 Maven 模块，内部按领域、应用、基础设施、API 和启动包组织 | 想用最短路径先跑通小型服务 |
+| `modular` | 五个 Maven 模块，保留同一条 greeting 与 health 纵切 | 这些层需要独立构建或团队边界 |
+
+省略 profile 时仍使用 `modular profile`，以保持默认输出兼容。上面的 `simple` 命令就是可
+复现的无 AI 入口：CLI 构建完成后，不需要 AI 服务或托管的 Scaffold endpoint。
+
 ## 你会得到什么
 
 **示意生成结果——下面的目录和响应来自内置样例契约，不代表已有服务完成部署：**
+
+下面目录示意 modular profile；simple profile 会把相同的分层边界放在 `src/`
+下，并只保留根目录一个 Maven 模块。
 
 ```text
 demo-service/
@@ -121,6 +140,12 @@ GET /actuator/health
 | `icarus-scaffold-cli` | 本地命令行入口，写出生成 ZIP；不覆盖任意目录。 |
 | `icarus-scaffold-server` | 可选 REST 适配器，返回 ZIP，设置请求限制和安全响应头，不接受服务器文件系统路径。 |
 | `icarus-scaffold-core/.../templates/` | 生成的多模块项目及公开研发文档。 |
+
+模板包选择是一个受信任的扩展点。`--template-pack` 与 REST 的
+`templatePack` 字段默认使用 `default`。标准 registry 只有这个内置模板包；
+可信下游应用可以从进程 classpath 加载 `TemplatePack` 实现，并配置明确的 REST
+allow-list。模板清单只能声明安全的相对逻辑模板/输出路径，不接受模板目录、任意
+文件系统路径、URL、shell 命令或运行时外部 JAR 路径。
 
 生成器核心与 HTTP、数据库边界分离。生成项目包含便于开始开发的应用分层和测试，
 但投入生产前仍需独立完成依赖、安全、运维和许可证审查。
@@ -163,7 +188,7 @@ CLI 默认将 ZIP 字节写入标准输出。需要输出到当前目录文件�
 `--output demo-service.zip`；也可以在明确的外部策略下使用标准输出重定向：
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.2.0-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -174,6 +199,11 @@ java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
 实际 jar 文件名包含项目版本；如果兼容版本调整了参数，请先执行 CLI 的 help
 命令。CLI 不接受任意输出目录、覆盖开关、模板目录、shell 命令或服务器文件系统
 路径。
+
+如需显式选择内置模板包，可追加 `--template-pack default`。未知模板包 ID 会在写出
+ZIP 前拒绝。可选 REST 适配器使用同一个 `templatePack` 请求字段，并只允许
+`icarus.scaffold.allowed-template-packs` 中的 ID（默认：`default`）。多个可信 ID
+使用英文逗号分隔，例如 `default,company-java`。
 
 执行跨平台端到端检查：
 
@@ -191,9 +221,9 @@ JSON 数组环境变量 `ICARUS_CLI_ARGS_JSON`；冷缓存 Docker 构建默认�
 ## 运行可选 REST 适配器
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.4.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.2.0.jar
 curl --fail-with-body -H "Content-Type: application/json" \
-  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
+  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service","profile":"simple"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip
 ```
 

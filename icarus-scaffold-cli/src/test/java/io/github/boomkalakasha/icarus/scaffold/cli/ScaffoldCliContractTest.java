@@ -44,6 +44,53 @@ class ScaffoldCliContractTest {
     }
 
     @Test
+    void acceptsTheExplicitDefaultTemplatePackOption() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream errors = new ByteArrayOutputStream();
+        int exitCode = new CommandLine(new ScaffoldCli(
+                new ScaffoldGenerator(), output, new PrintWriter(errors, true)))
+                .execute("--template-pack", "default");
+
+        assertEquals(0, exitCode);
+        assertEquals(0, errors.size());
+        assertTrue(output.size() > 100);
+    }
+
+    @Test
+    void selectsTheSimpleProfileWithoutAnAiOrNetworkDependency() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream errors = new ByteArrayOutputStream();
+        int exitCode = new CommandLine(new ScaffoldCli(
+                new ScaffoldGenerator(), output, new PrintWriter(errors, true)))
+                .execute("--profile", "simple", "--artifact", "cli-service", "--group", "com.example",
+                        "--package", "com.example.cli", "--port", "8090");
+
+        assertEquals(0, exitCode);
+        assertEquals(0, errors.size());
+        Set<String> names = new HashSet<>();
+        try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(output.toByteArray()))) {
+            for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                names.add(entry.getName());
+            }
+        }
+        assertTrue(names.contains("src/main/java/com/example/cli/boot/GeneratedApplication.java"));
+        assertFalse(names.contains("boot/pom.xml"));
+    }
+
+    @Test
+    void rejectsAnUnknownTemplatePackOptionBeforeWritingZipBytes() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ByteArrayOutputStream errors = new ByteArrayOutputStream();
+        int exitCode = new CommandLine(new ScaffoldCli(
+                new ScaffoldGenerator(), output, new PrintWriter(errors, true)))
+                .execute("--template-pack", "unknown");
+
+        assertTrue(exitCode != 0);
+        assertEquals(0, output.size());
+        assertFalse(errors.toString().isBlank());
+    }
+
+    @Test
     void mapsAnExplicitLicenseDeclarationIntoTheGeneratedZip() throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ByteArrayOutputStream errors = new ByteArrayOutputStream();

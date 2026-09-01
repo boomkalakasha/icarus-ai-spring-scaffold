@@ -8,9 +8,14 @@
 >
 > **From one idea to a reviewable service skeleton.**
 
-From one service requirement, Icarus uses its CLI or REST adapter to generate a consistent Java 17 / Spring Boot starting point that a team or collaborating agents can inspect, build, test, and evolve.
+From one confirmed service request, Icarus uses its CLI or REST adapter to
+generate a consistent Java 17 / Spring Boot starting point that a team or
+collaborating agents can inspect, build, test, and evolve. The Scaffold does
+not include or host an AI model and does not interpret open-ended natural
+language; a Vibe Coding tool or IDEA plugin may help turn a conversation into
+the confirmed CLI or REST request.
 
-`icarus-ai-spring-scaffold` is a security-focused, AI-friendly generator for
+`icarus-ai-spring-scaffold` is a security-focused, host-friendly generator for
 small Spring Boot projects. It validates the project coordinates and writes a
 ZIP archive in memory before returning it. The generated project is intended as
 a reviewable starting point for a Java 17 / Spring Boot 3 application; it is
@@ -28,7 +33,7 @@ release gates pass. Versions follow SemVer.
 
 | If you need to... | Icarus gives you... | A useful first result |
 | --- | --- | --- |
-| Start a new Java service | A validated, multi-module Spring Boot project ZIP | A reviewable skeleton instead of an empty repository |
+| Start a new Java service | A validated, multi-module Spring Boot project ZIP or a compact simple-profile ZIP | A reviewable skeleton instead of an empty repository |
 | Keep generation safe | Bounded coordinates, confined paths, ZIP traversal checks and no-overwrite output | A predictable artifact that is safer to hand to a team or Agent |
 | Choose how to integrate it | A local CLI plus an optional REST adapter | A scriptable path for developers, CI jobs or a trusted internal edge |
 | Prove the generated project is usable | Package, health, greeting and optional Docker Compose checks | Evidence about the sample, with unavailable checks reported as `NOT_RUN` |
@@ -47,7 +52,8 @@ wrapper and keep the generated ZIP in the current directory.
 For a first try, follow these four steps:
 
 1. Build the reactor so the CLI and its dependencies are available locally.
-2. Generate `demo-service.zip` with the CLI command below.
+2. Generate `demo-service.zip` with the CLI command below. The example uses
+   the simple profile so a small service starts with one Maven module.
 3. Unpack it and read the generated `AGENTS.md`, README and module layout
    before changing application code.
 4. Run `python scripts/generate-sample.py --root .` when you want package,
@@ -71,20 +77,20 @@ POSIX shell:
 
 ```bash
 ./mvnw -B -ntp clean verify
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.2.0-all.jar \
   --artifact demo-service --group com.example.demo \
   --package com.example.demo --port 18080 \
-  --description "Generated sample" --output demo-service.zip
+  --description "Generated sample" --profile simple --output demo-service.zip
 ```
 
 PowerShell:
 
 ```powershell
 .\mvnw.cmd -B -ntp clean verify
-java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.1.4-all.jar `
+java -jar .\icarus-scaffold-cli\target\icarus-scaffold-cli-1.2.0-all.jar `
   --artifact demo-service --group com.example.demo `
   --package com.example.demo --port 18080 `
-  --description "Generated sample" --output demo-service.zip
+  --description "Generated sample" --profile simple --output demo-service.zip
 ```
 
 `--output` accepts only one new `*.zip` filename directly below the current
@@ -92,10 +98,28 @@ working directory. Absolute, nested, `..`, non-ZIP and existing targets are
 rejected; `CREATE_NEW` protects against a validation/write race. Omit it to
 preserve the original stdout ZIP contract.
 
+## Choose an architecture profile
+
+The CLI and REST request share the same two profile values:
+
+| Profile | Generated shape | Choose it when |
+| --- | --- | --- |
+| `simple` | One Maven module with domain, application, infrastructure, API and boot packages | You want the shortest path to a small working service |
+| `modular` | Five Maven modules with the same greeting and health slice | Those layers need independent build or ownership boundaries |
+
+The modular profile remains the default when the profile is omitted, keeping
+backwards-compatible output.
+The `simple` command above is a reproducible no-AI entry point: after the CLI
+is built, it does not require an AI service or a hosted Scaffold endpoint. The
+CLI does not include or host an AI model.
+
 ## What you get
 
 **Illustrative generated result — paths and responses below describe the
 bundled sample contract, not a deployed service:**
+
+The tree below illustrates the modular profile; a simple-profile ZIP keeps the
+same package boundaries under `src/` and has one root Maven module.
 
 ```text
 demo-service/
@@ -129,6 +153,14 @@ rights holder has made that decision; supported identifiers are
 | `icarus-scaffold-cli` | Local command-line entry point that writes a generated ZIP; it does not overwrite an arbitrary directory. |
 | `icarus-scaffold-server` | Optional REST adapter. It returns a ZIP, applies request limits and security headers, and does not accept a server filesystem path. |
 | `icarus-scaffold-core/.../templates/` | The generated multi-module project and its public development documentation. |
+
+Template selection is a trusted extension point. `--template-pack` and the
+REST `templatePack` field default to `default`. The stock registry contains
+only that bundled pack; trusted downstream applications can add
+`TemplatePack` implementations from the process classpath and configure an
+explicit REST allow-list. Pack manifests contain only safe relative logical
+template/output paths. Template directories, arbitrary filesystem paths, URLs,
+shell commands and runtime external JAR paths are not accepted.
 
 The generator deliberately keeps the core independent from HTTP and database
 concerns. Generated projects contain the application layers and tests needed
@@ -177,7 +209,7 @@ executable CLI artifact that includes its runtime dependencies, redirect that
 output to a file when you need a destination outside the cwd filename policy:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar \
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.2.0-all.jar \
   --artifact demo-service \
   --group com.example.demo \
   --package com.example.demo \
@@ -190,6 +222,12 @@ command if an option has changed in a later compatible release. The safer
 in-process path is `--output demo-service.zip` shown above. The command does
 not accept an arbitrary output directory, overwrite switch, template
 directory, shell command or server filesystem path.
+
+To select the bundled pack explicitly, add `--template-pack default`. Unknown
+pack IDs fail before ZIP output. The optional REST adapter uses the same
+`templatePack` request field and allows only IDs in
+`icarus.scaffold.allowed-template-packs` (default: `default`). Configure more
+than one trusted ID as a comma-separated value such as `default,company-java`.
 
 For a platform-neutral end-to-end check, run:
 
@@ -212,9 +250,9 @@ CLI needs a different argument layout; the ZIP still must be written to stdout.
 ## Run the optional REST adapter
 
 ```bash
-java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.1.4.jar
+java -jar icarus-scaffold-server/target/icarus-scaffold-server-1.2.0.jar
 curl --fail-with-body -H "Content-Type: application/json" \
-  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service"}' \
+  --data '{"artifact":"demo-service","group":"com.example.demo","package":"com.example.demo","port":18080,"description":"Demo service","profile":"simple"}' \
   http://localhost:8080/api/scaffolds --output demo-service.zip
 ```
 

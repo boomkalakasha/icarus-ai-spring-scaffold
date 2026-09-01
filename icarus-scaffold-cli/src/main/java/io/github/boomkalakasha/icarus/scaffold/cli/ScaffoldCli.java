@@ -37,6 +37,14 @@ public final class ScaffoldCli implements Callable<Integer> {
     @Option(names = "--description", defaultValue = "A generated Spring service", description = "Short project description")
     private String description;
 
+    @Option(names = "--template-pack", defaultValue = "default",
+            description = "Trusted classpath template pack identifier")
+    private String templatePack;
+
+    @Option(names = "--profile", defaultValue = "modular",
+            description = "Architecture profile: simple (one module) or modular (five modules)")
+    private String profile;
+
     @Option(names = "--license", description = "Optional generated-project license: Apache-2.0 or MIT")
     private String license;
 
@@ -91,7 +99,7 @@ public final class ScaffoldCli implements Callable<Integer> {
         try {
             byte[] zip = generator.generate(new ScaffoldRequest(
                     artifact, group, packageName, port, description,
-                    license, copyrightHolder, copyrightYear));
+                    license, copyrightHolder, copyrightYear, templatePack, profile));
             if (requestedOutput == null) {
                 output.write(zip);
                 output.flush();

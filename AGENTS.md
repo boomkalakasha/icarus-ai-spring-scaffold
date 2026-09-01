@@ -22,7 +22,7 @@ belong here.
 - Keep source, templates, examples and documentation free of credentials,
   private hostnames, private dependencies, customer identifiers and copied
   internal history.
-- Do not add arbitrary output paths, shell execution, template-directory
+- Do not add arbitrary output paths, shell execution, template pack directory
   overrides or overwrite behavior to the generator without a documented
   security review and tests.
 - Keep GitHub Actions pinned to reviewed commit SHAs. Do not use
@@ -50,6 +50,17 @@ not a promise that every downstream deployment environment is supported.
 Before opening a pull request, also check `git diff --check`, review the
 generated ZIP contents, and confirm that release notes describe only evidence
 available from the current tag.
+
+## Project/module AI guidance coverage
+
+This root `AGENTS.md` is the project-level guide for the generator. The core,
+CLI, and server Maven modules share one reactor build and one release lifecycle;
+their current module-level status is `NOT_NEEDED`. Do not create a module-level
+guide merely because a Maven module exists. Reassess when a module gains a
+distinct command, an external API or data/security contract, independent
+ownership or rollback, or a dependency boundary that this root guide cannot
+make safe. A necessary module guide must be short, link back here, and describe
+only the distinct boundary.
 
 ## Change boundaries
 

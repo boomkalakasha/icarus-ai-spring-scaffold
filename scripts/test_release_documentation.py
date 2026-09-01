@@ -6,6 +6,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseDocumentationTests(unittest.TestCase):
+    def test_root_agent_guide_records_template_pack_and_module_guidance_boundaries(self):
+        guide = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        for marker in (
+            "template pack",
+            "project-level guide",
+            "module-level",
+            "NOT_NEEDED",
+            "mvn -B -ntp clean verify",
+        ):
+            self.assertIn(marker, guide, marker)
+
     def test_readmes_use_theme_compatible_watermark(self):
         for name in ("README.md", "README.zh-CN.md"):
             source = (ROOT / name).read_text(encoding="utf-8")
@@ -40,6 +51,7 @@ class ReleaseDocumentationTests(unittest.TestCase):
         self.assertIn("Candidate notes for the next release", changelog)
         self.assertIn("checksums, SBOM, and build provenance", english)
         self.assertIn("校验和、SBOM 与构建来源证明", chinese)
+        self.assertIn("## [1.2.0] - Unreleased", changelog)
         self.assertIn("## [1.1.4] - 2026-08-28", changelog)
         self.assertIn("## [1.1.2] - 2026-08-26", changelog)
         self.assertIn("## [1.1.1] - 2026-08-26", changelog)
@@ -97,10 +109,65 @@ class ReleaseDocumentationTests(unittest.TestCase):
             for marker in markers:
                 self.assertIn(marker, source, marker)
 
+    def test_template_pack_boundary_is_documented_in_both_languages(self):
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs" / "architecture.md").read_text(encoding="utf-8")
+        cli = (ROOT / "docs" / "cli.md").read_text(encoding="utf-8")
+        rest = (ROOT / "docs" / "rest-api.md").read_text(encoding="utf-8")
+
+        for source in (english, chinese, architecture, rest):
+            self.assertIn("templatePack", source)
+            self.assertIn("default", source)
+        self.assertIn("--template-pack", cli)
+        self.assertIn("default", cli)
+        self.assertIn("TemplatePack", english)
+        self.assertIn("TemplatePack", chinese)
+        self.assertIn("icarus.scaffold.allowed-template-packs", rest)
+        self.assertIn("trusted classpath", architecture)
+        self.assertIn("classpath", cli)
+
+    def test_profiles_and_no_ai_reproducible_entry_are_documented(self):
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+        cli = (ROOT / "docs" / "cli.md").read_text(encoding="utf-8")
+
+        self.assertIn("--profile simple", english)
+        self.assertIn("simple profile", english)
+        self.assertIn("modular profile", english)
+        self.assertIn("does not include or host an AI model", english)
+        self.assertIn("--profile simple", chinese)
+        self.assertIn("simple profile", chinese)
+        self.assertIn("modular profile", chinese)
+        self.assertIn("不内置或托管大模型", chinese)
+        self.assertIn("--profile", cli)
+        self.assertIn("simple", cli)
+        self.assertIn("modular", cli)
+
+    def test_scaffold_candidate_version_and_jar_names_are_consistent(self):
+        poms = (
+            ROOT / "pom.xml",
+            ROOT / "icarus-scaffold-core" / "pom.xml",
+            ROOT / "icarus-scaffold-cli" / "pom.xml",
+            ROOT / "icarus-scaffold-server" / "pom.xml",
+        )
+        for pom in poms:
+            self.assertIn("<version>1.2.0</version>", pom.read_text(encoding="utf-8"), str(pom))
+
+        for name in ("README.md", "README.zh-CN.md", "docs/cli.md", "docs/rest-api.md", "docs/troubleshooting.md"):
+            source = (ROOT / name).read_text(encoding="utf-8")
+            self.assertIn("1.2.0", source, name)
+            self.assertNotIn("icarus-scaffold-cli-1.1.4", source, name)
+            self.assertNotIn("icarus-scaffold-server-1.1.4", source, name)
+
     def test_v113_changelog_records_timeout_cleanup(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertIn("process trees", changelog)
         self.assertIn("ICARUS_DOCKER_CHECK_TIMEOUT_SECONDS", changelog)
+        for version, next_version in (("1.1.4", "1.1.3"), ("1.1.3", "1.1.2")):
+            section = changelog.split(f"## [{version}]", 1)[1].split(f"## [{next_version}]", 1)[0]
+            self.assertIn("Public release verified", section)
+            self.assertNotIn("not public", section)
 
     def test_v111_changelog_records_direct_start_port_support(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")

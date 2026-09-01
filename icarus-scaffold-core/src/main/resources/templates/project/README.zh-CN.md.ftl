@@ -22,6 +22,11 @@ java -jar boot/target/boot-0.1.0-SNAPSHOT.jar
 - `api`：HTTP 传输层
 - `boot`：Spring Boot 启动与装配
 
+这个 ZIP 使用 modular profile。如果希望把相同的分层边界放在一个 Maven
+模块内，可在 CLI 或 REST 请求中选择 simple profile；省略 profile 会继续
+生成兼容既有契约的 modular 输出。Scaffold 不内置或托管大模型；由独立的
+宿主工具把对话整理成已确认的请求。
+
 ## 本地运行
 
 ```text

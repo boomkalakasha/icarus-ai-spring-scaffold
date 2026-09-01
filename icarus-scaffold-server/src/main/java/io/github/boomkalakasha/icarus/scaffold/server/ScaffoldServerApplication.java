@@ -1,6 +1,7 @@
 package io.github.boomkalakasha.icarus.scaffold.server;
 
 import io.github.boomkalakasha.icarus.scaffold.core.ScaffoldGenerator;
+import io.github.boomkalakasha.icarus.scaffold.core.template.TemplatePackRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -13,8 +14,13 @@ public class ScaffoldServerApplication {
     }
 
     @Bean
-    ScaffoldGenerator scaffoldGenerator() {
-        return new ScaffoldGenerator();
+    TemplatePackRegistry templatePackRegistry() {
+        return TemplatePackRegistry.fromClasspath();
+    }
+
+    @Bean
+    ScaffoldGenerator scaffoldGenerator(TemplatePackRegistry templatePackRegistry) {
+        return new ScaffoldGenerator(templatePackRegistry);
     }
 
 }

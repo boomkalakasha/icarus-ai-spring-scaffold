@@ -22,6 +22,12 @@ This Java 17 Spring Boot project is split into five small modules:
 - `api` — HTTP transport
 - `boot` — executable Spring Boot application
 
+This ZIP uses the modular profile. Choose the simple profile when you want the
+same package boundaries inside one Maven module; the CLI and REST request both
+accept `simple` or `modular`, and omitting the field keeps this modular output.
+The Scaffold does not include or host an AI model; use a separate host tool to
+turn a conversation into a confirmed request.
+
 ## Run
 
 ```text

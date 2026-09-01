@@ -20,6 +20,9 @@ public final class ScaffoldRequestValidator {
             "true", "false", "null", "record", "sealed", "permits", "non-sealed", "var", "yield");
     private static final String SAFE_DESCRIPTION_PUNCTUATION = " .,;:_()[]/'\"!?&+-=#@%*";
     private static final Set<String> SUPPORTED_LICENSES = Set.of("Apache-2.0", "MIT");
+    private static final Pattern TEMPLATE_PACK = Pattern.compile("[a-z][a-z0-9-]{0,63}");
+    private static final Set<String> SUPPORTED_PROFILES = Set.of(
+            ScaffoldRequest.SIMPLE_PROFILE, ScaffoldRequest.MODULAR_PROFILE);
 
     public void validate(ScaffoldRequest request) {
         if (request == null) {
@@ -33,6 +36,8 @@ public final class ScaffoldRequestValidator {
         }
         validateDescription(request.description());
         validateLicenseDeclaration(request);
+        validateTemplatePack(request.templatePack());
+        validateProfile(request.profile());
     }
 
     public static void validateRequest(ScaffoldRequest request) {
@@ -102,6 +107,19 @@ public final class ScaffoldRequestValidator {
         }
         if (request.copyrightYear() < 1900 || request.copyrightYear() > 9999) {
             throw new InvalidScaffoldRequestException("copyright year must be between 1900 and 9999");
+        }
+    }
+
+    private static void validateTemplatePack(String templatePack) {
+        if (templatePack == null || !TEMPLATE_PACK.matcher(templatePack).matches()) {
+            throw new InvalidScaffoldRequestException(
+                    "templatePack must match [a-z][a-z0-9-]{0,63}");
+        }
+    }
+
+    private static void validateProfile(String profile) {
+        if (!SUPPORTED_PROFILES.contains(profile)) {
+            throw new InvalidScaffoldRequestException("profile must be simple or modular");
         }
     }
 }

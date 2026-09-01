@@ -296,9 +296,9 @@ def replace_port(arguments: list[str], port: int) -> list[str]:
 
 
 def find_boot_jar(project_root: Path) -> Path:
-    target = project_root / "boot" / "target"
     candidates = sorted(
         jar
+        for target in (project_root / "boot" / "target", project_root / "target")
         for jar in target.glob("*.jar")
         if not any(
             marker in jar.name
@@ -306,7 +306,7 @@ def find_boot_jar(project_root: Path) -> Path:
         )
     )
     if not candidates:
-        raise VerificationError("Generated project did not produce boot/target/*.jar.")
+        raise VerificationError("Generated project did not produce a packaged application JAR.")
     return max(candidates, key=lambda path: path.stat().st_mtime_ns)
 
 

@@ -24,6 +24,23 @@ class ScaffoldRequestValidatorTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"simple", "modular"})
+    void acceptsSupportedProfiles(String profile) {
+        assertDoesNotThrow(() -> validator.validate(new ScaffoldRequest(
+                "orders", "com.example", "com.example.orders", 8080, "safe",
+                null, null, null, "default", profile)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "Simple", "../escape", "simple/profile"})
+    void rejectsUnsupportedProfiles(String profile) {
+        assertThrows(InvalidScaffoldRequestException.class,
+                () -> validator.validate(new ScaffoldRequest(
+                        "orders", "com.example", "com.example.orders", 8080, "safe",
+                        null, null, null, "default", profile)));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"../evil", "../", "Alpha", "has space", "a/b", "a\\b", ""})
     void rejectsUnsafeArtifactNames(String artifact) {
         ScaffoldRequest request = new ScaffoldRequest(artifact, "com.example", "com.example.order", 8080, "safe");

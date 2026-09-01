@@ -4,10 +4,40 @@ All notable public changes to this project are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases
 follow [Semantic Versioning](https://semver.org/).
 
-## [1.1.4] - 2026-08-28
+## [1.2.0] - Unreleased
 
 > Candidate notes for the next release; this version is not public until its
 > tag, CI, assets, and release gates are independently verified.
+
+### Added
+
+- Added a trusted-classpath `TemplatePack` SPI with safe logical
+  `TemplateDefinition` paths and an immutable registry; the stock registry
+  contains only the bundled `default` pack.
+- Added `--template-pack` to the CLI and `templatePack` to REST requests while
+  preserving `default` output for requests that omit the field.
+- Added the REST `icarus.scaffold.allowed-template-packs` allow-list, defaulting
+  to `default`, with comma-separated environment configuration and fail-closed
+  rejection for disallowed or unknown IDs.
+- Added deterministic `simple` and `modular` architecture profiles to the CLI,
+  REST request and bundled `default` pack. Omitting `profile` keeps the existing
+  five-module `modular` output; `simple` keeps the greeting and health slice in
+  one Maven module.
+- Documented the CLI as a reproducible no-AI entry point. Natural-language
+  interpretation remains the responsibility of a separate host tool.
+- Documented generated root `AGENTS.md` as the stock project guide and explain
+  when a later module-level AI guide is justified instead of duplicating rules
+  for every generated module.
+
+### Security
+
+- Kept template selection closed to template directories, arbitrary filesystem
+  paths, URLs, shell commands and runtime external JAR paths; duplicate and
+  unsafe pack manifests are rejected.
+
+## [1.1.4] - 2026-08-28
+
+> Public release verified for `v1.1.4` while preparing the 1.2.0 candidate.
 
 ### Fixed
 
@@ -28,8 +58,7 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [1.1.3] - 2026-08-26
 
-> Candidate notes for the next release; this version is not public until its
-> tag, CI, assets, and release gates are independently verified.
+> Public release verified for `v1.1.3` while preparing the 1.2.0 candidate.
 
 ### Fixed
 
@@ -81,6 +110,7 @@ Initial public release line:
 - GitHub CI, dependency automation, static security analysis, checksums, SBOM
   and build-provenance release metadata.
 
+[1.2.0]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/compare/v1.1.4...HEAD
 [1.1.4]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.4
 [1.1.3]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.3
 [1.1.2]: https://github.com/boomkalakasha/icarus-ai-spring-scaffold/releases/tag/v1.1.2
