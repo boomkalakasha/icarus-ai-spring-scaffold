@@ -14,6 +14,15 @@ Keep dependencies pointing inward. Add tests beside the module that owns the
 behavior. Do not add credentials, private repositories, shell execution, or
 machine-specific paths to this project.
 
+## AI guidance coverage
+
+This root guide is the project-level instruction for the generated stock
+modules. Do not add a module guide just because a folder exists. Add a nearest
+module guide only when a module has a distinct command, external contract,
+data/security boundary, release or ownership lifecycle, or dependency
+direction that the root guide cannot state clearly. Keep that guide short and
+link it back to this root guide.
+
 ## Local verification
 
 ```text

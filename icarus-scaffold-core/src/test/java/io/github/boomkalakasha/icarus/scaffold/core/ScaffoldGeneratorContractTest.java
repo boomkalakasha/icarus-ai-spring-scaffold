@@ -15,10 +15,73 @@ import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ScaffoldGeneratorContractTest {
 
     private final ScaffoldGenerator generator = new ScaffoldGenerator();
+
+    @Test
+    void omittedTemplatePackKeepsTheDefaultBytesCompatibleWithExplicitDefault() {
+        ScaffoldRequest legacy = new ScaffoldRequest(
+                "order-service", "com.example", "com.example.order", 8088, "A safe service");
+        ScaffoldRequest explicit = new ScaffoldRequest(
+                "order-service", "com.example", "com.example.order", 8088, "A safe service",
+                null, null, null, "default", "modular");
+
+        assertArrayEquals(generator.generate(legacy), generator.generate(explicit));
+        assertEquals("default", legacy.templatePack());
+        assertEquals("modular", legacy.profile());
+    }
+
+    @Test
+    void simpleProfileGeneratesOneModuleWithTheExistingGreetingSlice() throws IOException {
+        Map<String, byte[]> files = readZip(generator.generate(new ScaffoldRequest(
+                "order-service", "com.example", "com.example.order", 8088, "A safe service",
+                null, null, null, "default", "simple")));
+
+        assertTrue(files.containsKey("pom.xml"));
+        assertTrue(files.containsKey("src/main/java/com/example/order/domain/Greeting.java"));
+        assertTrue(files.containsKey("src/main/java/com/example/order/application/GreetingService.java"));
+        assertTrue(files.containsKey("src/main/java/com/example/order/infrastructure/InMemoryGreetingRepository.java"));
+        assertTrue(files.containsKey("src/main/java/com/example/order/api/GreetingController.java"));
+        assertTrue(files.containsKey("src/main/java/com/example/order/boot/GeneratedApplication.java"));
+        assertTrue(files.containsKey("src/test/java/com/example/order/boot/GeneratedApplicationTest.java"));
+        assertFalse(files.containsKey("domain/pom.xml"));
+        assertFalse(files.containsKey("application/pom.xml"));
+        assertFalse(files.containsKey("boot/pom.xml"));
+        assertTrue(new String(files.get("README.md"), StandardCharsets.UTF_8).contains("simple profile"));
+    }
+
+    @Test
+    void modularProfileKeepsTheExistingFiveModuleShape() throws IOException {
+        Map<String, byte[]> files = readZip(generator.generate(new ScaffoldRequest(
+                "order-service", "com.example", "com.example.order", 8088, "A safe service",
+                null, null, null, "default", "modular")));
+
+        assertTrue(files.containsKey("domain/pom.xml"));
+        assertTrue(files.containsKey("application/pom.xml"));
+        assertTrue(files.containsKey("infrastructure/pom.xml"));
+        assertTrue(files.containsKey("api/pom.xml"));
+        assertTrue(files.containsKey("boot/pom.xml"));
+        assertFalse(files.containsKey("src/main/java/com/example/order/domain/Greeting.java"));
+    }
+
+    @Test
+    void generatedRootGuideExplainsWhenModuleLevelAiGuidanceIsNeeded() throws IOException {
+        for (String profile : List.of("simple", "modular")) {
+            Map<String, byte[]> files = readZip(generator.generate(new ScaffoldRequest(
+                    "order-service", "com.example", "com.example.order", 8088, "A safe service",
+                    null, null, null, "default", profile)));
+
+            String guide = new String(files.get("AGENTS.md"), StandardCharsets.UTF_8);
+            assertTrue(guide.contains("AI guidance coverage"));
+            assertTrue(guide.contains("Do not add a module guide just because a folder exists"));
+            assertTrue(guide.contains("distinct command"));
+            assertTrue(guide.contains("data/security boundary"));
+        }
+    }
 
     @Test
     void generatesACompilableMultiModuleProjectContract() throws IOException {

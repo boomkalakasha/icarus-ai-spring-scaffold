@@ -17,6 +17,8 @@ public final class ScaffoldRequestPayload {
     private String packageName;
     private Integer port;
     private String description;
+    private String templatePack;
+    private String profile;
     private String license;
     private String copyrightHolder;
     private Integer copyrightYear;
@@ -59,6 +61,16 @@ public final class ScaffoldRequestPayload {
         this.description = description;
     }
 
+    @JsonProperty("templatePack")
+    public void setTemplatePack(String templatePack) {
+        this.templatePack = templatePack;
+    }
+
+    @JsonProperty("profile")
+    public void setProfile(String profile) {
+        this.profile = profile;
+    }
+
     @JsonProperty("license")
     public void setLicense(String license) {
         this.license = license;
@@ -85,6 +97,6 @@ public final class ScaffoldRequestPayload {
         }
         return new ScaffoldRequest(
                 artifact, group, packageName, port == null ? 0 : port, description,
-                license, copyrightHolder, copyrightYear);
+                license, copyrightHolder, copyrightYear, templatePack, profile);
     }
 }

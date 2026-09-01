@@ -4,6 +4,9 @@ spring:
   mvc:
     problemdetails:
       enabled: false
+icarus:
+  scaffold:
+    allowed-template-packs: ${ICARUS_SCAFFOLD_ALLOWED_TEMPLATE_PACKS:default}
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
   max-http-request-header-size: 8KB

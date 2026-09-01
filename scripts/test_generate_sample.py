@@ -192,6 +192,16 @@ class PrepareOutputDirectoryTest(unittest.TestCase):
         self.assertEqual(captured, ["java", "-jar", str(jar)])
         self.assertTrue(process.terminated)
 
+    def test_find_boot_jar_accepts_the_simple_profile_root_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project_root = Path(temporary)
+            target = project_root / "target"
+            target.mkdir()
+            jar = target / "demo-service-0.1.0-SNAPSHOT.jar"
+            jar.write_bytes(b"jar")
+
+            self.assertEqual(jar, GENERATE_SAMPLE.find_boot_jar(project_root))
+
     def test_docker_cleanup_removes_the_compose_owned_local_image(self) -> None:
         commands = []
         cleanup = []

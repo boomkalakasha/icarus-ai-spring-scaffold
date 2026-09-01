@@ -19,16 +19,16 @@ traversal, non-ZIP suffix or an existing file. Use stdout redirection when a
 different destination policy is required:
 
 ```bash
-java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.1.4-all.jar > demo-service.zip
+java -jar icarus-scaffold-cli/target/icarus-scaffold-cli-1.2.0-all.jar > demo-service.zip
 ```
 
 ## Runtime smoke cannot connect
 
 The sample verifier selects a bounded free local port for its default run,
-checks the packaged `boot` jar and terminates it in a `finally` block. Choose a
-different validated port through `ICARUS_CLI_ARGS_JSON` if another local
-service owns the port, then inspect the temporary `runtime.log` while
-reproducing the failure.
+checks the packaged application JAR (`boot/target` for `modular`, or `target`
+for `simple`) and terminates it in a `finally` block. Choose a different
+validated port through `ICARUS_CLI_ARGS_JSON` if another local service owns the
+port, then inspect the temporary `runtime.log` while reproducing the failure.
 
 ## Docker is not available
 
